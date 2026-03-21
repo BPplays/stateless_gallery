@@ -96,7 +96,8 @@
         #lb-stage {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
-            padding: 60px 80px 56px;
+            /* padding: 60px 80px 56px; */
+            padding: 0px;
             pointer-events: none;
         }
         #lb-img {
@@ -140,12 +141,23 @@
         }
         #lb-close:hover { background: rgba(255,255,255,.18); color: #fff; }
 
+        #lb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* or cover if you want it to fill and crop */
+            display: block;
+        }
+
         #lb-caption {
             position: absolute; bottom: 0; left: 0; right: 0;
             padding: 14px 96px 14px 20px;
             display: flex; align-items: baseline; gap: 10px;
             background: linear-gradient(transparent, rgba(0,0,0,.55));
-            pointer-events: none; z-index: 2;
+            /* pointer-events: none; z-index: 2; */
+            opacity: 0;
+        }
+        #lb-caption:hover {
+            opacity: 1;
         }
         #lb-name    { font-size: .82rem; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #lb-counter { font-size: .75rem; color: rgba(255,255,255,.35); white-space: nowrap; flex-shrink: 0; }
@@ -261,7 +273,7 @@
             item.appendChild(label);
 
             function open() { openLightbox(i); }
-            item.addEventListener("click", open);
+            item.addEventListener("mousedown", open);
             item.addEventListener("keydown", function (e) {
                 if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
             });
@@ -334,11 +346,11 @@
     }
 
     // ── Controls ──────────────────────────────────────────────────────────────
-    document.getElementById("lb-prev").addEventListener("click", function () { navigate(-1); });
-    document.getElementById("lb-next").addEventListener("click", function () { navigate(1); });
-    document.getElementById("lb-close").addEventListener("click", closeLightbox);
+    document.getElementById("lb-prev").addEventListener("mousedown", function () { navigate(-1); });
+    document.getElementById("lb-next").addEventListener("mousedown", function () { navigate(1); });
+    document.getElementById("lb-close").addEventListener("mousedown", closeLightbox);
 
-    lightbox.addEventListener("click", function (e) {
+    lightbox.addEventListener("mousedown", function (e) {
         if (e.target === lightbox || e.target.id === "lb-stage") { closeLightbox(); }
     });
 
@@ -346,8 +358,14 @@
     document.addEventListener("keydown", function (e) {
         if (!lightbox.classList.contains("open")) return;
         if (e.key === "Escape")     closeLightbox();
+
         if (e.key === "ArrowLeft")  navigate(-1);
+        if (e.key === "h")  navigate(-1);
+        if (e.key === "a")  navigate(-1);
+
         if (e.key === "ArrowRight") navigate(1);
+        if (e.key === "l") navigate(1);
+        if (e.key === "d") navigate(1);
     });
 
     // ── Touch / swipe ─────────────────────────────────────────────────────────
