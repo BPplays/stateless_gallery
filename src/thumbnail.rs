@@ -117,7 +117,7 @@ pub fn get_or_create_thumbnail(
     }
 
     // ── Cache hit ────────────────────────────────────────────────────────────
-    let cache_path = cache_dir.join(format!("{}.jpg", cache_key(image_path, cfg)));
+    let cache_path = cache_dir.join(format!("{}.avif", cache_key(image_path, cfg)));
     if cache_path.exists() {
         return Ok(Some(cache_path));
     }
@@ -154,10 +154,14 @@ pub fn get_or_create_thumbnail(
     {
         let mut cursor = Cursor::new(&mut thumb_bytes);
         let enc =
-            image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, cfg.quality.clamp(1, 100));
+            image::codecs::avif::AvifEncoder::new_with_speed_quality(
+                &mut cursor,
+                5,
+                cfg.quality.clamp(1, 100),
+            );
         resized
             .write_with_encoder(enc)
-            .context("encoding thumbnail as JPEG")?;
+            .context("encoding thumbnail as AVIF")?;
     }
 
     // ── JPEG gainmap preservation ─────────────────────────────────────────────

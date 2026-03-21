@@ -1,411 +1,414 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>__TITLE__</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>__TITLE__</title>
+        <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg:      #0d0d0d;
-      --surface: #181818;
-      --border:  #2a2a2a;
-      --text:    #e2e2e2;
-      --muted:   #666;
-      --accent:  #fff;
-      --radius:  3px;
-      --gap:     3px;
-    }
+        :root {
+            --bg:      #0d0d0d;
+            --surface: #181818;
+            --border:  #2a2a2a;
+            --text:    #e2e2e2;
+            --muted:   #666;
+            --accent:  #fff;
+            --radius:  3px;
+            --gap:     3px;
+        }
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
 
-    /* ── Header ─────────────────────────────────────────────── */
-    header {
-      display: flex;
-      align-items: baseline;
-      gap: 14px;
-      padding: 20px 24px 14px;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      background: var(--bg);
-      z-index: 10;
-    }
-    header h1   { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; color: var(--accent); }
-    header .count { font-size: 0.8rem; color: var(--muted); }
+        /* ── Header ─────────────────────────────────────────────── */
+        header {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            padding: 20px 24px 14px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 10;
+        }
+        header h1   { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; color: var(--accent); }
+        header .count { font-size: 0.8rem; color: var(--muted); }
 
-    /* ── Gallery grid ────────────────────────────────────────── */
-    #gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: var(--gap);
-      padding: var(--gap);
-    }
+        /* ── Gallery grid ────────────────────────────────────────── */
+        #gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: var(--gap);
+            padding: var(--gap);
+        }
 
-    .thumb-item {
-      aspect-ratio: 1 / 1;
-      overflow: hidden;
-      background: var(--surface);
-      cursor: pointer;
-      position: relative;
-      border-radius: var(--radius);
-    }
-    .thumb-item img {
-      width: 100%; height: 100%;
-      object-fit: cover; display: block;
-      transition: transform .35s cubic-bezier(.25,.46,.45,.94), opacity .2s ease;
-    }
-    .thumb-item:hover img { transform: scale(1.055); opacity: .88; }
+        .thumb-item {
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            background: var(--surface);
+            cursor: pointer;
+            position: relative;
+            border-radius: var(--radius);
+        }
+        .thumb-item img {
+            width: 100%; height: 100%;
+            object-fit: cover; display: block;
+            transition: transform .35s cubic-bezier(.25,.46,.45,.94), opacity .2s ease;
+        }
+        .thumb-item:hover img { transform: scale(1.055); opacity: .88; }
 
-    .thumb-item .label {
-      position: absolute; inset: auto 0 0 0;
-      padding: 28px 10px 10px;
-      background: linear-gradient(transparent, rgba(0,0,0,.72));
-      font-size: .72rem; color: rgba(255,255,255,.85);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      opacity: 0; transition: opacity .18s;
-      pointer-events: none;
-      border-radius: 0 0 var(--radius) var(--radius);
-    }
-    .thumb-item:hover .label { opacity: 1; }
+        .thumb-item .label {
+            position: absolute; inset: auto 0 0 0;
+            padding: 28px 10px 10px;
+            background: linear-gradient(transparent, rgba(0,0,0,.72));
+            font-size: .72rem; color: rgba(255,255,255,.85);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            opacity: 0; transition: opacity .18s;
+            pointer-events: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+        .thumb-item:hover .label { opacity: 1; }
 
-    /* ── Empty state ─────────────────────────────────────────── */
-    .empty {
-      grid-column: 1/-1; text-align: center;
-      padding: 80px 20px; color: var(--muted); font-size: .95rem;
-    }
+        /* ── Empty state ─────────────────────────────────────────── */
+        .empty {
+            grid-column: 1/-1; text-align: center;
+            padding: 80px 20px; color: var(--muted); font-size: .95rem;
+        }
 
-    /* ── Lightbox ────────────────────────────────────────────── */
-    #lightbox {
-      display: none; position: fixed; inset: 0; z-index: 1000;
-      background: rgba(5,5,5,.97);
-      align-items: center; justify-content: center;
-    }
-    #lightbox.open { display: flex; }
+        /* ── Lightbox ────────────────────────────────────────────── */
+        #lightbox {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            background: rgba(5,5,5,.97);
+            align-items: center; justify-content: center;
+        }
+        #lightbox.open { display: flex; }
 
-    #lb-stage {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      padding: 60px 80px 56px;
-      pointer-events: none;
-    }
-    #lb-img {
-      max-width: 100%; max-height: 100%;
-      object-fit: contain; border-radius: 2px;
-      box-shadow: 0 8px 60px rgba(0,0,0,.7);
-      pointer-events: auto;
-      transition: opacity .15s ease;
-      user-select: none; -webkit-user-drag: none;
-    }
-    #lb-img.fading { opacity: 0; }
+        #lb-stage {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            padding: 60px 80px 56px;
+            pointer-events: none;
+        }
+        #lb-img {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain; border-radius: 2px;
+            box-shadow: 0 8px 60px rgba(0,0,0,.7);
+            pointer-events: auto;
+            transition: opacity .15s ease;
+            user-select: none; -webkit-user-drag: none;
+        }
+        #lb-img.fading { opacity: 0; }
 
-    /* ── Lightbox controls ───────────────────────────────────── */
-    .lb-btn {
-      position: absolute; top: 50%; transform: translateY(-50%);
-      width: 48px; height: 48px; border-radius: 50%;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.07);
-      color: rgba(255,255,255,.75);
-      font-size: 1.3rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: background .15s, color .15s, border-color .15s;
-      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-      z-index: 2; line-height: 1;
-    }
-    .lb-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
-    #lb-prev { left: 16px; }
-    #lb-next { right: 16px; }
+        /* ── Lightbox controls ───────────────────────────────────── */
+        .lb-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 48px; height: 48px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.14);
+            background: rgba(255,255,255,.07);
+            color: rgba(255,255,255,.75);
+            font-size: 1.3rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .15s, color .15s, border-color .15s;
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            z-index: 2; line-height: 1;
+        }
+        .lb-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
+        #lb-prev { left: 16px; }
+        #lb-next { right: 16px; }
 
-    #lb-close {
-      position: absolute; top: 16px; right: 16px;
-      width: 38px; height: 38px; border-radius: 50%;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.07);
-      color: rgba(255,255,255,.65);
-      font-size: 1rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: background .15s, color .15s;
-      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-      z-index: 2;
-    }
-    #lb-close:hover { background: rgba(255,255,255,.18); color: #fff; }
+        #lb-close {
+            position: absolute; top: 16px; right: 16px;
+            width: 38px; height: 38px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.14);
+            background: rgba(255,255,255,.07);
+            color: rgba(255,255,255,.65);
+            font-size: 1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .15s, color .15s;
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            z-index: 2;
+        }
+        #lb-close:hover { background: rgba(255,255,255,.18); color: #fff; }
 
-    #lb-caption {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      padding: 14px 96px 14px 20px;
-      display: flex; align-items: baseline; gap: 10px;
-      background: linear-gradient(transparent, rgba(0,0,0,.55));
-      pointer-events: none; z-index: 2;
-    }
-    #lb-name    { font-size: .82rem; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    #lb-counter { font-size: .75rem; color: rgba(255,255,255,.35); white-space: nowrap; flex-shrink: 0; }
+        #lb-caption {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 14px 96px 14px 20px;
+            display: flex; align-items: baseline; gap: 10px;
+            background: linear-gradient(transparent, rgba(0,0,0,.55));
+            pointer-events: none; z-index: 2;
+        }
+        #lb-name    { font-size: .82rem; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #lb-counter { font-size: .75rem; color: rgba(255,255,255,.35); white-space: nowrap; flex-shrink: 0; }
 
-    #lb-spinner {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
-      width: 36px; height: 36px;
-      border: 2px solid rgba(255,255,255,.12);
-      border-top-color: rgba(255,255,255,.55);
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-      opacity: 0; transition: opacity .2s; pointer-events: none;
-    }
-    #lb-spinner.visible { opacity: 1; }
-    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+        #lb-spinner {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: 36px; height: 36px;
+            border: 2px solid rgba(255,255,255,.12);
+            border-top-color: rgba(255,255,255,.55);
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            opacity: 0; transition: opacity .2s; pointer-events: none;
+        }
+        #lb-spinner.visible { opacity: 1; }
+        @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
 
-    /* ── Live-reload indicator ───────────────────────────────── */
-    #reload-toast {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: rgba(40,40,40,.92); color: #e2e2e2;
-      font-size: .78rem; padding: 8px 16px; border-radius: 20px;
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      opacity: 0; transition: opacity .3s;
-      pointer-events: none; z-index: 2000;
-      white-space: nowrap;
-    }
-    #reload-toast.show { opacity: 1; }
+        /* ── Live-reload indicator ───────────────────────────────── */
+        #reload-toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(40,40,40,.92); color: #e2e2e2;
+            font-size: .78rem; padding: 8px 16px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,.12);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            opacity: 0; transition: opacity .3s;
+            pointer-events: none; z-index: 2000;
+            white-space: nowrap;
+        }
+        #reload-toast.show { opacity: 1; }
 
-    /* ── Responsive ─────────────────────────────────────────── */
-    @media (max-width: 480px) {
-      #gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-      #lb-stage { padding: 52px 52px 48px; }
-      .lb-btn { width: 38px; height: 38px; font-size: 1.1rem; }
-      #lb-prev { left: 8px; }
-      #lb-next { right: 8px; }
-    }
-  </style>
-</head>
-<body>
+        /* ── Responsive ─────────────────────────────────────────── */
+        @media (max-width: 480px) {
+            #gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            #lb-stage { padding: 52px 52px 48px; }
+            .lb-btn { width: 38px; height: 38px; font-size: 1.1rem; }
+            #lb-prev { left: 8px; }
+            #lb-next { right: 8px; }
+        }
+        </style>
+    </head>
+    <body>
 
-<header>
-  <h1>__TITLE__</h1>
-  <span class="count" id="js-count">__COUNT__</span>
-</header>
+        <header>
+            <h1>__TITLE__</h1>
+            <span class="count" id="js-count">__COUNT__</span>
+        </header>
 
-<div id="gallery" role="list"></div>
+        <div id="gallery" role="list"></div>
 
-<div id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
-  <div id="lb-stage">
-    <img id="lb-img" src="" alt="">
-  </div>
-  <div id="lb-spinner" aria-hidden="true"></div>
-  <button class="lb-btn" id="lb-prev" aria-label="Previous image">&#8249;</button>
-  <button class="lb-btn" id="lb-next" aria-label="Next image">&#8250;</button>
-  <button id="lb-close" aria-label="Close">&#10005;</button>
-  <div id="lb-caption" aria-live="polite">
-    <span id="lb-name"></span>
-    <span id="lb-counter"></span>
-  </div>
-</div>
+        <div id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+            <div id="lb-stage">
+                <img id="lb-img" src="" alt="">
+            </div>
+            <div id="lb-spinner" aria-hidden="true"></div>
+            <button class="lb-btn" id="lb-prev" aria-label="Previous image">&#8249;</button>
+            <button class="lb-btn" id="lb-next" aria-label="Next image">&#8250;</button>
+            <button id="lb-close" aria-label="Close">&#10005;</button>
+            <div id="lb-caption" aria-live="polite">
+                <span id="lb-name"></span>
+                <span id="lb-counter"></span>
+            </div>
+        </div>
 
-<!-- Toast shown when the gallery hot-reloads a new image count -->
-<div id="reload-toast" aria-live="polite"></div>
+        <!-- Toast shown when the gallery hot-reloads a new image count -->
+        <div id="reload-toast" aria-live="polite"></div>
 
-<script>
+        <script>
 (function () {
-  "use strict";
+    "use strict";
 
-  // ── Server-injected data ──────────────────────────────────────────────────
-  // Each entry: { thumb: "/slug/thumb/<b64>?secret=...", full: "...", name: "..." }
-  // The secret (if any) is already baked into every URL by the server.
-  let IMAGES = __IMAGES_JSON__;
+    // ── Server-injected data ──────────────────────────────────────────────────
+    // Each entry: { thumb: "/slug/thumb/<b64>?secret=...", full: "...", name: "..." }
+    // The secret (if any) is already baked into every URL by the server.
+    let IMAGES = __IMAGES_JSON__;
 
-  // ── DOM refs ──────────────────────────────────────────────────────────────
-  const gallery     = document.getElementById("gallery");
-  const lightbox    = document.getElementById("lightbox");
-  const lbImg       = document.getElementById("lb-img");
-  const lbSpinner   = document.getElementById("lb-spinner");
-  const lbName      = document.getElementById("lb-name");
-  const lbCounter   = document.getElementById("lb-counter");
-  const countEl     = document.getElementById("js-count");
-  const reloadToast = document.getElementById("reload-toast");
+    // ── DOM refs ──────────────────────────────────────────────────────────────
+    const gallery     = document.getElementById("gallery");
+    const lightbox    = document.getElementById("lightbox");
+    const lbImg       = document.getElementById("lb-img");
+    const lbSpinner   = document.getElementById("lb-spinner");
+    const lbName      = document.getElementById("lb-name");
+    const lbCounter   = document.getElementById("lb-counter");
+    const countEl     = document.getElementById("js-count");
+    const reloadToast = document.getElementById("reload-toast");
 
-  // ── Render grid ───────────────────────────────────────────────────────────
-  function buildGrid(images) {
-    gallery.innerHTML = "";
+    // ── Render grid ───────────────────────────────────────────────────────────
+    function buildGrid(images) {
+        gallery.innerHTML = "";
 
-    if (images.length === 0) {
-      gallery.innerHTML = '<p class="empty">No images found. Check that <code>photo_dirs</code> in your config points to a directory with supported image files.</p>';
-      return;
+        if (images.length === 0) {
+            gallery.innerHTML = '<p class="empty">No images found. Check that <code>photo_dirs</code> in your config points to a directory with supported image files.</p>';
+            return;
+        }
+
+        images.forEach(function (img, i) {
+            const item = document.createElement("div");
+            item.className = "thumb-item";
+            item.setAttribute("role", "listitem");
+            item.setAttribute("tabindex", "0");
+            item.setAttribute("aria-label", img.name);
+
+            const el = document.createElement("img");
+            el.src = img.thumb;
+            el.alt = img.name;
+            el.loading = "lazy";
+            el.decoding = "async";
+
+            const label = document.createElement("div");
+            label.className = "label";
+            label.textContent = img.name;
+
+            item.appendChild(el);
+            item.appendChild(label);
+
+            function open() { openLightbox(i); }
+            item.addEventListener("click", open);
+            item.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+            });
+
+            gallery.appendChild(item);
+        });
     }
 
-    images.forEach(function (img, i) {
-      const item = document.createElement("div");
-      item.className = "thumb-item";
-      item.setAttribute("role", "listitem");
-      item.setAttribute("tabindex", "0");
-      item.setAttribute("aria-label", img.name);
+    buildGrid(IMAGES);
 
-      const el = document.createElement("img");
-      el.src = img.thumb;
-      el.alt = img.name;
-      el.loading = "lazy";
-      el.decoding = "async";
+    // ── Lightbox state ────────────────────────────────────────────────────────
+    let current = 0;
+    let loadingImg = null;
 
-      const label = document.createElement("div");
-      label.className = "label";
-      label.textContent = img.name;
+    function openLightbox(index) {
+        current = index;
+        loadImage(current);
+        lightbox.classList.add("open");
+        document.body.style.overflow = "hidden";
+        document.getElementById("lb-prev").focus();
+    }
 
-      item.appendChild(el);
-      item.appendChild(label);
+    function closeLightbox() {
+        lightbox.classList.remove("open");
+        document.body.style.overflow = "";
+        if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
+    }
 
-      function open() { openLightbox(i); }
-      item.addEventListener("click", open);
-      item.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
-      });
+    function navigate(delta) {
+        if (IMAGES.length === 0) return;
+        current = ((current + delta) % IMAGES.length + IMAGES.length) % IMAGES.length;
+        loadImage(current);
+    }
 
-      gallery.appendChild(item);
+    function loadImage(index) {
+        const img = IMAGES[index];
+        lbName.textContent = img.name;
+        lbCounter.textContent = "(" + (index + 1) + "\u202f/\u202f" + IMAGES.length + ")";
+
+        if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
+
+        if (lbImg.src && lbImg.src.split("?")[0] === (location.origin + img.full.split("?")[0])
+            && lbImg.complete && lbImg.naturalWidth) {
+            return; // already loaded
+        }
+
+        lbImg.classList.add("fading");
+        lbSpinner.classList.add("visible");
+
+        const newImg = new Image();
+        loadingImg = newImg;
+
+        newImg.onload = function () {
+            if (loadingImg !== newImg) return;
+            lbImg.src = newImg.src;
+            lbImg.alt = img.name;
+            lbImg.classList.remove("fading");
+            lbSpinner.classList.remove("visible");
+            loadingImg = null;
+        };
+
+        newImg.onerror = function () {
+            if (loadingImg !== newImg) return;
+            lbImg.classList.remove("fading");
+            lbSpinner.classList.remove("visible");
+            loadingImg = null;
+        };
+
+        newImg.src = img.full;
+    }
+
+    // ── Controls ──────────────────────────────────────────────────────────────
+    document.getElementById("lb-prev").addEventListener("click", function () { navigate(-1); });
+    document.getElementById("lb-next").addEventListener("click", function () { navigate(1); });
+    document.getElementById("lb-close").addEventListener("click", closeLightbox);
+
+    lightbox.addEventListener("click", function (e) {
+        if (e.target === lightbox || e.target.id === "lb-stage") { closeLightbox(); }
     });
-  }
 
-  buildGrid(IMAGES);
+    // ── Keyboard ──────────────────────────────────────────────────────────────
+    document.addEventListener("keydown", function (e) {
+        if (!lightbox.classList.contains("open")) return;
+        if (e.key === "Escape")     closeLightbox();
+        if (e.key === "ArrowLeft")  navigate(-1);
+        if (e.key === "ArrowRight") navigate(1);
+    });
 
-  // ── Lightbox state ────────────────────────────────────────────────────────
-  let current = 0;
-  let loadingImg = null;
+    // ── Touch / swipe ─────────────────────────────────────────────────────────
+    var touchStartX = 0, touchStartY = 0;
+    lightbox.addEventListener("touchstart", function (e) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    lightbox.addEventListener("touchend", function (e) {
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        var dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            navigate(dx < 0 ? 1 : -1);
+        }
+    }, { passive: true });
 
-  function openLightbox(index) {
-    current = index;
-    loadImage(current);
-    lightbox.classList.add("open");
-    document.body.style.overflow = "hidden";
-    document.getElementById("lb-prev").focus();
-  }
+    // ── Hot-reload polling ────────────────────────────────────────────────────
+    // Poll the current page URL every 10 s.  If the server returns a different
+    // image count the gallery is rebuilt in-place without a full page reload.
+    // The secret is already in the URL so this works for protected galleries too.
+    (function startPolling() {
+        var INTERVAL = 10000; // 10 s
 
-  function closeLightbox() {
-    lightbox.classList.remove("open");
-    document.body.style.overflow = "";
-    if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
-  }
+        function poll() {
+            fetch(location.href, { cache: "no-store" })
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    var match = html.match(/var IMAGES = (\[[\s\S]*?\]);/);
+                    if (!match) return;
+                    var fresh;
+                    try { fresh = JSON.parse(match[1]); } catch (e) { return; }
 
-  function navigate(delta) {
-    if (IMAGES.length === 0) return;
-    current = ((current + delta) % IMAGES.length + IMAGES.length) % IMAGES.length;
-    loadImage(current);
-  }
+                    if (fresh.length === IMAGES.length) return; // nothing changed
 
-  function loadImage(index) {
-    const img = IMAGES[index];
-    lbName.textContent = img.name;
-    lbCounter.textContent = "(" + (index + 1) + "\u202f/\u202f" + IMAGES.length + ")";
+                    var added   = fresh.length - IMAGES.length;
+                    var message = added > 0
+                        ? "+" + added + " new photo" + (added === 1 ? "" : "s")
+                        : Math.abs(added) + " photo" + (Math.abs(added) === 1 ? "" : "s") + " removed";
 
-    if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
+                    IMAGES = fresh;
+                    buildGrid(IMAGES);
+                    var plural = fresh.length === 1 ? "" : "s";
+                    countEl.textContent = fresh.length + " photo" + plural;
 
-    if (lbImg.src && lbImg.src.split("?")[0] === (location.origin + img.full.split("?")[0])
-        && lbImg.complete && lbImg.naturalWidth) {
-      return; // already loaded
-    }
+                    // Close lightbox if the image it was showing was removed.
+                    if (lightbox.classList.contains("open") && current >= IMAGES.length) {
+                        closeLightbox();
+                    }
 
-    lbImg.classList.add("fading");
-    lbSpinner.classList.add("visible");
+                    // Show toast.
+                    reloadToast.textContent = message;
+                    reloadToast.classList.add("show");
+                    setTimeout(function () { reloadToast.classList.remove("show"); }, 3000);
+                })
+                .catch(function () { /* silently ignore network errors */ });
+        }
 
-    const newImg = new Image();
-    loadingImg = newImg;
-
-    newImg.onload = function () {
-      if (loadingImg !== newImg) return;
-      lbImg.src = newImg.src;
-      lbImg.alt = img.name;
-      lbImg.classList.remove("fading");
-      lbSpinner.classList.remove("visible");
-      loadingImg = null;
-    };
-
-    newImg.onerror = function () {
-      if (loadingImg !== newImg) return;
-      lbImg.classList.remove("fading");
-      lbSpinner.classList.remove("visible");
-      loadingImg = null;
-    };
-
-    newImg.src = img.full;
-  }
-
-  // ── Controls ──────────────────────────────────────────────────────────────
-  document.getElementById("lb-prev").addEventListener("click", function () { navigate(-1); });
-  document.getElementById("lb-next").addEventListener("click", function () { navigate(1); });
-  document.getElementById("lb-close").addEventListener("click", closeLightbox);
-
-  lightbox.addEventListener("click", function (e) {
-    if (e.target === lightbox || e.target.id === "lb-stage") { closeLightbox(); }
-  });
-
-  // ── Keyboard ──────────────────────────────────────────────────────────────
-  document.addEventListener("keydown", function (e) {
-    if (!lightbox.classList.contains("open")) return;
-    if (e.key === "Escape")     closeLightbox();
-    if (e.key === "ArrowLeft")  navigate(-1);
-    if (e.key === "ArrowRight") navigate(1);
-  });
-
-  // ── Touch / swipe ─────────────────────────────────────────────────────────
-  var touchStartX = 0, touchStartY = 0;
-  lightbox.addEventListener("touchstart", function (e) {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-  lightbox.addEventListener("touchend", function (e) {
-    var dx = e.changedTouches[0].clientX - touchStartX;
-    var dy = e.changedTouches[0].clientY - touchStartY;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      navigate(dx < 0 ? 1 : -1);
-    }
-  }, { passive: true });
-
-  // ── Hot-reload polling ────────────────────────────────────────────────────
-  // Poll the current page URL every 10 s.  If the server returns a different
-  // image count the gallery is rebuilt in-place without a full page reload.
-  // The secret is already in the URL so this works for protected galleries too.
-  (function startPolling() {
-    var INTERVAL = 10000; // 10 s
-
-    function poll() {
-      fetch(location.href, { cache: "no-store" })
-        .then(function (r) { return r.text(); })
-        .then(function (html) {
-          var match = html.match(/var IMAGES = (\[[\s\S]*?\]);/);
-          if (!match) return;
-          var fresh;
-          try { fresh = JSON.parse(match[1]); } catch (e) { return; }
-
-          if (fresh.length === IMAGES.length) return; // nothing changed
-
-          var added   = fresh.length - IMAGES.length;
-          var message = added > 0
-            ? "+" + added + " new photo" + (added === 1 ? "" : "s")
-            : Math.abs(added) + " photo" + (Math.abs(added) === 1 ? "" : "s") + " removed";
-
-          IMAGES = fresh;
-          buildGrid(IMAGES);
-          var plural = fresh.length === 1 ? "" : "s";
-          countEl.textContent = fresh.length + " photo" + plural;
-
-          // Close lightbox if the image it was showing was removed.
-          if (lightbox.classList.contains("open") && current >= IMAGES.length) {
-            closeLightbox();
-          }
-
-          // Show toast.
-          reloadToast.textContent = message;
-          reloadToast.classList.add("show");
-          setTimeout(function () { reloadToast.classList.remove("show"); }, 3000);
-        })
-        .catch(function () { /* silently ignore network errors */ });
-    }
-
-    setInterval(poll, INTERVAL);
-  }());
+        setInterval(poll, INTERVAL);
+    }());
 
 }());
-</script>
-</body>
+        </script>
+    </body>
 </html>
