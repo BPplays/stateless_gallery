@@ -162,6 +162,19 @@
         #lb-name    { font-size: .82rem; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #lb-counter { font-size: .75rem; color: rgba(255,255,255,.35); white-space: nowrap; flex-shrink: 0; }
 
+        #lb-copy {
+            flex-shrink: 0;
+            margin-left: auto;
+            background: none; border: 1px solid rgba(255,255,255,.18);
+            border-radius: 5px; color: rgba(255,255,255,.45);
+            padding: 4px 8px; cursor: pointer;
+            display: flex; align-items: center; gap: 5px;
+            font-size: .72rem; font-family: inherit;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+        #lb-copy:hover { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35); }
+        #lb-copy.copied { color: #6ee7b7; border-color: #6ee7b7; }
+
         #lb-spinner {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%,-50%);
@@ -218,6 +231,9 @@
             <div id="lb-caption" aria-live="polite">
                 <span id="lb-name"></span>
                 <span id="lb-counter"></span>
+                <button id="lb-copy" title="Copy link to this image" aria-label="Copy link to this image">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </button>
             </div>
         </div>
 
@@ -288,17 +304,60 @@
     let current = 0;
     let loadingImg = null;
 
+    // Preload cache: keyed by full URL, value is a finished Image element.
+    const preloadCache = new Map();
+
+    function preloadAdjacent(index) {
+        if (IMAGES.length <= 1) return;
+        const neighbors = [
+            ((index + 1) % IMAGES.length),
+            ((index - 1 + IMAGES.length) % IMAGES.length),
+        ];
+        neighbors.forEach(function (i) {
+            const url = IMAGES[i].full;
+            if (preloadCache.has(url)) return;
+            const pre = new Image();
+            pre.onload = function () { preloadCache.set(url, pre); };
+            pre.src = url;
+        });
+    }
+
+    // ── URL hash deep-linking ─────────────────────────────────────────────────
+    // Hash is the bare filename, e.g.  #image1.avif
+    // The ?secret= is already baked into every full/thumb URL by the server;
+    // the hash carries only the filename so sharing is frictionless.
+
+    function setHashForIndex(index) {
+        var name = IMAGES[index] ? IMAGES[index].name : "";
+        if (name) {
+            history.replaceState(null, "", "#" + encodeURIComponent(name));
+        }
+    }
+
+    function clearHash() {
+        history.replaceState(null, "", location.pathname + location.search);
+    }
+
+    function indexFromHash() {
+        var hash = decodeURIComponent(location.hash.slice(1));
+        if (!hash) return -1;
+        return IMAGES.findIndex(function (img) { return img.name === hash; });
+    }
+
     function openLightbox(index) {
         current = index;
         loadImage(current);
+        setHashForIndex(current);
         lightbox.classList.add("open");
         document.body.style.overflow = "hidden";
         document.getElementById("lb-prev").focus();
+        preloadAdjacent(current);
     }
 
     function closeLightbox() {
         lightbox.classList.remove("open");
         document.body.style.overflow = "";
+        clearHash();
         if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
     }
 
@@ -306,6 +365,8 @@
         if (IMAGES.length === 0) return;
         current = ((current + delta) % IMAGES.length + IMAGES.length) % IMAGES.length;
         loadImage(current);
+        setHashForIndex(current);
+        preloadAdjacent(current);
     }
 
     function loadImage(index) {
@@ -320,6 +381,15 @@
             return; // already loaded
         }
 
+        // Use preloaded image if available.
+        if (preloadCache.has(img.full)) {
+            lbImg.src = img.full;
+            lbImg.alt = img.name;
+            lbImg.classList.remove("fading");
+            lbSpinner.classList.remove("visible");
+            return;
+        }
+
         lbImg.classList.add("fading");
         lbSpinner.classList.add("visible");
 
@@ -328,6 +398,7 @@
 
         newImg.onload = function () {
             if (loadingImg !== newImg) return;
+            preloadCache.set(img.full, newImg);
             lbImg.src = newImg.src;
             lbImg.alt = img.name;
             lbImg.classList.remove("fading");
@@ -344,6 +415,55 @@
 
         newImg.src = img.full;
     }
+
+    // ── Open from hash on page load ───────────────────────────────────────────
+    (function () {
+        var i = indexFromHash();
+        if (i >= 0) { openLightbox(i); }
+    }());
+
+    // ── Handle browser back/forward changing the hash ─────────────────────────
+    window.addEventListener("hashchange", function () {
+        var i = indexFromHash();
+        if (i >= 0) {
+            if (!lightbox.classList.contains("open")) {
+                openLightbox(i);
+            } else {
+                current = i;
+                loadImage(i);
+                preloadAdjacent(i);
+            }
+        } else {
+            if (lightbox.classList.contains("open")) {
+                lightbox.classList.remove("open");
+                document.body.style.overflow = "";
+                if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
+            }
+        }
+    });
+
+    // ── Copy-link button ──────────────────────────────────────────────────────
+    (function () {
+        var btn = document.getElementById("lb-copy");
+        btn.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+        btn.addEventListener("click", function () {
+            var url = location.href; // already has the hash set
+            navigator.clipboard.writeText(url).then(function () {
+                btn.classList.add("copied");
+                setTimeout(function () { btn.classList.remove("copied"); }, 1800);
+            }).catch(function () {
+                // Fallback: select a temporary input
+                var tmp = document.createElement("input");
+                tmp.value = url;
+                document.body.appendChild(tmp);
+                tmp.select();
+                document.execCommand("copy");
+                document.body.removeChild(tmp);
+                btn.classList.add("copied");
+                setTimeout(function () { btn.classList.remove("copied"); }, 1800);
+            });
+        });
+    }());
 
     // ── Controls ──────────────────────────────────────────────────────────────
     document.getElementById("lb-prev").addEventListener("mousedown", function () { navigate(-1); });
