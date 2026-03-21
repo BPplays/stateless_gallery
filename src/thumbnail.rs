@@ -36,7 +36,14 @@ pub fn is_supported_image(path: &Path) -> bool {
             | Some("bmp")
             | Some("tiff")
             | Some("tif")
-            | Some("avif") // decoded only if the "avif" feature is enabled
+            | Some("avif")
+            | Some("hdr")
+            | Some("exr")
+            | Some("ico")
+            | Some("tga")
+            | Some("qoi")
+            | Some("pnm")
+            | Some("ff")
     )
 }
 
