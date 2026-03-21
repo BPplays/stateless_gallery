@@ -144,9 +144,9 @@ fn handle_event(
     let Some(Ok(ev)) = event else { return };
 
     // Only care about events that actually change the set of image files.
-    use notify::EventKind::*;
+    use notify::EventKind;
     match ev.kind {
-        Create(_) | Remove(_) | Modify(_) | Rename(_) => {}
+        EventKind::Create(_) | EventKind::Remove(_) | EventKind::Modify(_) => {}
         _ => return,
     }
 

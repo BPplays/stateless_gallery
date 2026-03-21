@@ -206,6 +206,6 @@ fn transplant_jpeg_app_segments(src_bytes: Vec<u8>, dst_bytes: Vec<u8>) -> Resul
     merged.extend(body);
     *dst.segments_mut() = merged;
 
-    let out: Bytes = dst.encoder().bytes().context("img-parts: re-encoding JPEG")?;
+    let out: Bytes = dst.encoder().bytes();
     Ok(out.to_vec())
 }
