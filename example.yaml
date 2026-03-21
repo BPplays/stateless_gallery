@@ -1,0 +1,50 @@
+# photo-gallery example configuration
+# Run with: photo-gallery -c example.yaml
+
+galleries:
+  # Public gallery — no secret required.
+  - name: "Gallery Public"
+    url: "gallery_pub"
+    secret: ""
+    photo_dirs:
+      - /home/user/Pictures/public
+
+  # Unlisted gallery — requires ?secret=secretpass in the URL.
+  # Share the full URL: http://yourhost:8080/gallery_unlisted?secret=secretpass
+  - name: "Gallery Unlisted"
+    url: "gallery_unlisted"
+    secret: "secretpass"
+    photo_dirs:
+      - /home/user/Pictures/vacation-2024
+      - /home/user/Pictures/family
+
+# Directory used to cache generated thumbnail files.
+# Created automatically on startup. Safe to delete — thumbnails regenerate on demand.
+cache_dir: /tmp/photo-gallery-cache
+
+# TCP address to listen on.
+# Use "[::]:8080" to listen on all interfaces (IPv4 + IPv6).
+# Use "[::1]:8080" for IPv6 loopback only.
+bind: "[::1]:8080"
+
+thumbnails:
+  # true  → generate smaller JPEG thumbnails for the grid (recommended).
+  # false → serve full-size originals as thumbnails; cache_dir is unused.
+  enabled: true
+
+  # Maximum dimension (width or height) in pixels; aspect ratio is preserved.
+  max_size: 640
+
+  # JPEG quality for generated thumbnails (1–100).
+  quality: 90
+
+  # Preserve HDR gainmap metadata in thumbnails:
+  #
+  #   JPEG — All APP* segments (EXIF, ICC profile, Apple MPF gainmap,
+  #           ISO 21496-1 Ultra HDR gainmap, …) are transplanted verbatim
+  #           from the original into the resized JPEG.
+  #
+  #   AVIF — Gainmaps are in the ISOBMFF container; they can't survive
+  #           re-encoding. When true, AVIF originals are served as-is.
+  #           Set false to serve resized AVIF thumbnails (gainmap lost).
+  preserve_gainmaps: true
