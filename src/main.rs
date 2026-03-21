@@ -53,7 +53,7 @@ async fn main() -> Result<()> {
     let config_text = std::fs::read_to_string(&cli.config)
         .with_context(|| format!("could not read config file: {}", cli.config.display()))?;
     let config: Config =
-        serde_yaml::from_str(&config_text).context("failed to parse config YAML")?;
+        yaml_serde::from_str(&config_text).context("failed to parse config YAML")?;
 
     if config.galleries.is_empty() {
         bail!("config must define at least one gallery under `galleries:`");
@@ -113,11 +113,11 @@ async fn main() -> Result<()> {
 
     let app = Router::new()
         // Gallery index:  GET /{slug}?secret=...
-        .route("/:slug", get(handlers::gallery_index))
+        .route("/{slug}", get(handlers::gallery_index))
         // Thumbnail:      GET /{slug}/thumb/{encoded}?secret=...
-        .route("/:slug/thumb/:encoded", get(handlers::serve_thumbnail))
+        .route("/{slug}/thumb/{encoded}", get(handlers::serve_thumbnail))
         // Full-size:      GET /{slug}/full/{encoded}?secret=...
-        .route("/:slug/full/:encoded", get(handlers::serve_full))
+        .route("/{slug}/full/{encoded}", get(handlers::serve_full))
         .with_state(state);
 
     // ── Log all gallery URLs at startup ───────────────────────────────────────
