@@ -54,6 +54,33 @@ pub fn cache_key(image_path: &Path, cfg: &ThumbnailConfig) -> String {
     hex::encode(h.finalize())
 }
 
+fn make_thumb_path(input: &Path) -> Option<PathBuf> {
+    let dir = input.parent()?;
+    let file = input.file_stem()?.to_str()?;
+
+    let new_name = match input.extension().and_then(|e| e.to_str()) {
+        Some(ext) => format!("{file}.thumb.{ext}"),
+        None => format!("{file}.thumb"),
+    };
+
+    Some(dir.join(new_name))
+}
+
+pub fn is_thumb_path(path: &Path) -> bool {
+    let file_name = match path.file_name().and_then(|n| n.to_str()) {
+        Some(name) => name,
+        None => return false,
+    };
+
+    if let Some((stem, ext)) = file_name.rsplit_once('.') {
+        // has extension → check `{file}.thumb.{ext}`
+        stem.ends_with(".thumb")
+    } else {
+        // no extension → check `{file}.thumb`
+        file_name.ends_with(".thumb")
+    }
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /// Returns the path of a (potentially cached) thumbnail for `image_path`.
@@ -74,6 +101,12 @@ pub fn get_or_create_thumbnail(
     if !cfg.enabled {
         return Ok(None);
     }
+
+    if let Some(manual_thumb_path) = make_thumb_path(image_path)
+    && manual_thumb_path.exists() {
+        return Ok(Some(manual_thumb_path));
+    }
+
 
     // ── AVIF gainmap passthrough ─────────────────────────────────────────────
     // AVIF gainmaps live inside the ISOBMFF container as auxiliary image items.

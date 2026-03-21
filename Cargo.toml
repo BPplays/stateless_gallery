@@ -1,7 +1,7 @@
 [package]
 name = "photo-gallery"
 version = "0.2.0"
-edition = "2021"
+edition = "2024"
 description = "A stateless multi-gallery photo server backed by a YAML config and a thumbnail cache"
 
 [dependencies]

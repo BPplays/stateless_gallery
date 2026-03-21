@@ -40,11 +40,14 @@ pub fn scan_gallery(gallery: &GalleryConfig) -> Result<Vec<ImageEntry>> {
             if entry.file_type().is_file() {
                 let path = entry.into_path();
                 if thumbnail::is_supported_image(&path) {
-                    let filename = path
-                        .file_name()
-                        .map(|n| n.to_string_lossy().into_owned())
-                        .unwrap_or_default();
-                    images.push(ImageEntry { path, filename });
+                    if !thumbnail::is_thumb_path(&path) {
+                        let filename = path
+                            .file_name()
+                            .map(|n| n.to_string_lossy().into_owned())
+                            .unwrap_or_default();
+                        images.push(ImageEntry { path, filename });
+
+                    }
                 }
             }
         }

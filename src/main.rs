@@ -129,7 +129,7 @@ async fn main() -> Result<()> {
     for g in &config.galleries {
         if g.requires_secret() {
             tracing::info!(
-                "  {} → http://{}//{}?secret={}",
+                "  {} → http://{}/{}?secret={}",
                 g.name, addr, g.url, g.secret
             );
         } else {
