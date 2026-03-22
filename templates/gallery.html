@@ -112,7 +112,9 @@
             width: 300%;
             height: 100%;
             transform: translateX(-33.333%);
-            will-change: transform;
+            /* will-change applied by JS only during active drag/animation
+               to avoid permanently promoting 3 full-viewport images to GPU
+               layers, which exhausts VRAM on iOS and causes renderer crashes */
         }
 
         .lb-slide {
@@ -359,43 +361,71 @@
     buildGrid(IMAGES);
 
     // ── Preload cache ─────────────────────────────────────────────────────────
-    // Maps full URL → decoded HTMLImageElement.
-    // pre.decode() forces bitmap decoding on a background thread immediately,
-    // so the image is truly ready to paint when swapped into the visible slot.
+    // Maps full URL → HTMLImageElement confirmed loaded + decoded.
+    //
+    // IMPORTANT: we always wait for onload before calling decode().
+    // iOS Safari's decode() implementation can reject immediately (before the
+    // network fetch completes) instead of waiting as the spec requires.
+    // Calling decode() on a not-yet-loaded Image causes the catch to run with
+    // an incomplete element, which then gets cached and later crashes the
+    // renderer when its src is set on a visible <img>.  Waiting for onload
+    // first is safe on every browser.
     const preloadCache    = new Map();
     const preloadInFlight = new Set();
 
     function preloadUrl(url) {
         if (preloadCache.has(url) || preloadInFlight.has(url)) return;
         preloadInFlight.add(url);
-        const pre = new Image();
-        pre.src = url;
-        pre.decode()
-            .catch(function () {})   // AVIF decode() can fail on some browsers; degrade gracefully
-            .finally(function () {
+        var pre = new Image();
+        pre.onload = function () {
+            if (typeof pre.decode === "function") {
+                pre.decode()
+                    .catch(function () {}) // decode failed but image is still displayable
+                    .finally(function () {
+                        preloadCache.set(url, pre);
+                        preloadInFlight.delete(url);
+                    });
+            } else {
                 preloadCache.set(url, pre);
                 preloadInFlight.delete(url);
-            });
+            }
+        };
+        pre.onerror = function () { preloadInFlight.delete(url); };
+        pre.src = url;
     }
 
     function preloadAdjacent(index) {
         if (IMAGES.length <= 1) return;
-        for (var d = 1; d <= 2; d++) {
+        for (var d = 1; d <= 1; d++) {
             preloadUrl(IMAGES[((index + d) % IMAGES.length + IMAGES.length) % IMAGES.length].full);
             preloadUrl(IMAGES[((index - d) % IMAGES.length + IMAGES.length) % IMAGES.length].full);
         }
     }
 
     // ── Slot loading ──────────────────────────────────────────────────────────
-    // Load an image into any of the three slide img elements.
-    // showSpinner=true only for the centre slot on an explicit navigation —
-    // side slots load silently.
-    let loadingImg = null;
+    // Generation counter: incremented each time the centre slot gets a new
+    // load request. Any async callback that checks isCentre compares against
+    // this to discard results that arrived after the user navigated away.
+    var loadGeneration = 0;
 
     function loadIntoSlot(slotEl, imgData, showSpinner) {
         if (!imgData) return;
 
-        // Cache hit: the decoded bitmap is already in memory, swap instantly.
+        var myGen = showSpinner ? ++loadGeneration : 0;
+
+        function applyImage(imgEl) {
+            // Discard stale centre-slot results
+            if (showSpinner && myGen !== loadGeneration) return;
+            preloadCache.set(imgData.full, imgEl);
+            slotEl.src = imgEl.src;
+            slotEl.alt = imgData.name;
+            if (showSpinner) {
+                lbImgCurr.classList.remove("fading");
+                lbSpinner.classList.remove("visible");
+            }
+        }
+
+        // Cache hit: decoded bitmap already in memory, swap instantly.
         if (preloadCache.has(imgData.full)) {
             slotEl.src = preloadCache.get(imgData.full).src;
             slotEl.alt = imgData.name;
@@ -411,37 +441,43 @@
             lbSpinner.classList.add("visible");
         }
 
-        const newImg = new Image();
-        if (showSpinner) loadingImg = newImg;
-        const captured = newImg;
-
+        var newImg = new Image();
+        newImg.onload = function () {
+            // Image loaded from network. Now pre-decode so setting slotEl.src
+            // doesn't block the compositor thread.
+            if (typeof newImg.decode === "function") {
+                newImg.decode()
+                    .catch(function () {}) // decode failed; image still renderable
+                    .finally(function () { applyImage(newImg); });
+            } else {
+                applyImage(newImg);
+            }
+        };
+        newImg.onerror = function () {
+            if (showSpinner) {
+                lbImgCurr.classList.remove("fading");
+                lbSpinner.classList.remove("visible");
+            }
+        };
         newImg.src = imgData.full;
-        newImg.decode()
-            .catch(function () {})
-            .finally(function () {
-                if (showSpinner && loadingImg !== captured) return; // navigated away
-                preloadCache.set(imgData.full, newImg);
-                slotEl.src = newImg.src;
-                slotEl.alt = imgData.name;
-                if (showSpinner) {
-                    lbImgCurr.classList.remove("fading");
-                    lbSpinner.classList.remove("visible");
-                    loadingImg = null;
-                }
-            });
     }
 
     // Populate all three slots for a given centre index.
+    // Side slots are deferred by one animation frame so the centre slot
+    // gets the first crack at network and decode resources — the user
+    // only sees the centre image when the lightbox opens.
     function loadAllSlots(index) {
         const n = IMAGES.length;
-        if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
         lbName.textContent    = IMAGES[index].name;
         lbCounter.textContent = "(" + (index + 1) + "\u202f/\u202f" + n + ")";
 
         loadIntoSlot(lbImgCurr, IMAGES[index], true);
+
         if (n > 1) {
-            loadIntoSlot(lbImgPrev, IMAGES[(index - 1 + n) % n], false);
-            loadIntoSlot(lbImgNext, IMAGES[(index + 1) % n],     false);
+            requestAnimationFrame(function () {
+                loadIntoSlot(lbImgPrev, IMAGES[(index - 1 + n) % n], false);
+                loadIntoSlot(lbImgNext, IMAGES[(index + 1) % n],     false);
+            });
         }
     }
 
@@ -483,7 +519,8 @@
         lightbox.classList.remove("open");
         document.body.style.overflow = "";
         clearHash();
-        if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
+        // Bump generation so any in-flight centre-slot load is discarded
+        loadGeneration++;
         lbImgCurr.classList.remove("fading");
         lbSpinner.classList.remove("visible");
     }
@@ -511,7 +548,7 @@
             if (lightbox.classList.contains("open")) {
                 lightbox.classList.remove("open");
                 document.body.style.overflow = "";
-                if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
+                loadGeneration++;
             }
         }
     });
@@ -568,6 +605,7 @@
         touchStartY    = e.touches[0].clientY;
         touchStartTime = Date.now();
         dragActive     = true;
+        lbTrack.style.willChange = "transform";
         lbTrack.style.transition = "none";
     }, { passive: true });
 
@@ -579,6 +617,7 @@
         // Abort drag if gesture is primarily vertical.
         if (Math.abs(dy) > Math.abs(dx) * SWIPE_AXIS_LOCK && Math.abs(dy) > 10) {
             dragActive = false;
+            lbTrack.style.willChange = "";
             lbTrack.style.transition = "";
             setTrackX(0);
             return;
@@ -610,7 +649,10 @@
             // Snap back.
             lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
             setTrackX(0);
-            setTimeout(function () { lbTrack.style.transition = ""; }, ANIM_MS + 10);
+            setTimeout(function () {
+                lbTrack.style.transition = "";
+                lbTrack.style.willChange = "";
+            }, ANIM_MS + 10);
         }
     }, { passive: true });
 
@@ -619,13 +661,20 @@
         dragActive = false;
         lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
         setTrackX(0);
-        setTimeout(function () { lbTrack.style.transition = ""; }, ANIM_MS + 10);
+        setTimeout(function () {
+            lbTrack.style.transition = "";
+            lbTrack.style.willChange = "";
+        }, ANIM_MS + 10);
     }, { passive: true });
 
     function commitSwipe(direction) {
         // direction: +1 = going to next (swipe left), -1 = going to prev (swipe right)
         swipeAnimating = true;
         var n = IMAGES.length;
+
+        // Promote track to GPU layer only for the duration of the animation.
+        // Keeping will-change permanently exhausts VRAM on iOS with 3 large images.
+        lbTrack.style.willChange = "transform";
 
         // Animate to the arriving slot.
         // direction=+1 → slide track left so the right slot (next) fills the view.
@@ -677,6 +726,7 @@
             // Re-enable transition one frame later so the snap isn't animated.
             requestAnimationFrame(function () {
                 lbTrack.style.transition = "";
+                lbTrack.style.willChange = ""; // release GPU layer
                 swipeAnimating = false;
             });
 
@@ -709,15 +759,15 @@
             return;
         }
 
-        btn.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-        btn.addEventListener("mousedown", function () {
+        btn.addEventListener("mousedown", function (e) {
+            e.stopPropagation();
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 var el = lightbox;
-                if (el.requestFullscreen)       el.requestFullscreen();
+                if (el.requestFullscreen)            el.requestFullscreen();
                 else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
             } else {
-                if (document.exitFullscreen)        document.exitFullscreen();
-                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                if (document.exitFullscreen)             document.exitFullscreen();
+                else if (document.webkitExitFullscreen)  document.webkitExitFullscreen();
             }
         });
 
@@ -732,8 +782,8 @@
     }());
 
     // ── Share button ──────────────────────────────────────────────────────────
-    lbShare.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-    lbShare.addEventListener("mousedown", function () {
+    lbShare.addEventListener("mousedown", function (e) {
+        e.stopPropagation();
         var img = IMAGES[current];
         if (!img) return;
         var url = location.href;
@@ -745,12 +795,19 @@
             lbShare.classList.add("active");
             setTimeout(function () { lbShare.classList.remove("active"); }, 1800);
         }
-        navigator.clipboard.writeText(url).then(flash).catch(function () {
-            var tmp = document.createElement("input");
-            tmp.value = url; document.body.appendChild(tmp); tmp.select();
-            document.execCommand("copy"); document.body.removeChild(tmp);
-            flash();
-        });
+        function fallbackCopy() {
+            try {
+                var tmp = document.createElement("input");
+                tmp.value = url; document.body.appendChild(tmp); tmp.select();
+                document.execCommand("copy"); document.body.removeChild(tmp);
+                flash();
+            } catch (err) {}
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(flash).catch(fallbackCopy);
+        } else {
+            fallbackCopy();
+        }
     });
 
     lbDownload.addEventListener("mousedown", function (e) { e.stopPropagation(); });
@@ -758,19 +815,26 @@
     // ── Copy-link button ──────────────────────────────────────────────────────
     (function () {
         var btn = document.getElementById("lb-copy");
-        btn.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-        btn.addEventListener("mousedown", function () {
+        btn.addEventListener("mousedown", function (e) {
+            e.stopPropagation();
             var url = location.href;
-            navigator.clipboard.writeText(url).then(function () {
+            function flash() {
                 btn.classList.add("copied");
                 setTimeout(function () { btn.classList.remove("copied"); }, 1800);
-            }).catch(function () {
-                var tmp = document.createElement("input");
-                tmp.value = url; document.body.appendChild(tmp); tmp.select();
-                document.execCommand("copy"); document.body.removeChild(tmp);
-                btn.classList.add("copied");
-                setTimeout(function () { btn.classList.remove("copied"); }, 1800);
-            });
+            }
+            function fallbackCopy() {
+                try {
+                    var tmp = document.createElement("input");
+                    tmp.value = url; document.body.appendChild(tmp); tmp.select();
+                    document.execCommand("copy"); document.body.removeChild(tmp);
+                    flash();
+                } catch (err) {}
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(flash).catch(fallbackCopy);
+            } else {
+                fallbackCopy();
+            }
         });
     }());
 
