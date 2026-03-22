@@ -336,8 +336,17 @@
         preloadInFlight.add(url);
         const pre = new Image();
         pre.onload = function () {
-            preloadCache.set(url, pre);
-            preloadInFlight.delete(url);
+            // decode() pushes bitmap decoding onto a background thread now,
+            // rather than letting the browser defer it until first paint.
+            // This is what eliminates the stutter on first display.
+            pre.decode()
+                .catch(function () {
+                    console.log("image decode failed")
+                })
+                .finally(function () {
+                    preloadCache.set(url, pre);
+                    preloadInFlight.delete(url);
+                });
         };
         pre.onerror = function () { preloadInFlight.delete(url); };
         pre.src = url;
@@ -447,13 +456,18 @@
         loadingImg = newImg;
 
         newImg.onload = function () {
-            if (loadingImg !== newImg) return; // navigated away
-            preloadCache.set(img.full, newImg);
-            lbImg.src = newImg.src;
-            lbImg.alt = img.name;
-            lbImg.classList.remove("fading");
-            lbSpinner.classList.remove("visible");
-            loadingImg = null;
+            if (loadingImg !== newImg) return;
+            newImg.decode()
+                .catch(function () {})
+                .finally(function () {
+                    if (loadingImg !== newImg) return;
+                    preloadCache.set(img.full, newImg);
+                    lbImg.src = newImg.src;
+                    lbImg.alt = img.name;
+                    lbImg.classList.remove("fading");
+                    lbSpinner.classList.remove("visible");
+                    loadingImg = null;
+                });
         };
 
         newImg.onerror = function () {
