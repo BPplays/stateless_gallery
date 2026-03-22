@@ -24,28 +24,6 @@ pub fn is_avif(path: &Path) -> bool {
     matches!(ext(path).as_deref(), Some("avif"))
 }
 
-/// Returns `true` for every image format the `image` crate can decode.
-pub fn is_supported_image(path: &Path) -> bool {
-    matches!(
-        ext(path).as_deref(),
-        Some("jpg")
-            | Some("jpeg")
-            | Some("png")
-            | Some("webp")
-            | Some("gif")
-            | Some("bmp")
-            | Some("tiff")
-            | Some("tif")
-            | Some("avif")
-            | Some("hdr")
-            | Some("exr")
-            | Some("ico")
-            | Some("tga")
-            | Some("qoi")
-            | Some("pnm")
-            | Some("ff")
-    )
-}
 
 // ─── Cache key ───────────────────────────────────────────────────────────────
 

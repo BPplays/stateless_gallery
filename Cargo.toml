@@ -20,8 +20,10 @@ serde_json = "1"
 image      = { version = "0.25", default-features = true, features = [
     "jpeg", "png", "webp", "gif", "bmp", "tiff",
     "avif", "gif", "hdr", "pnm", "tga", "qoi",
-    "ico", "exr", "ff", "ico",
+    "ico", "exr", "ff",
+    "serde", "rayon"
 ] }
+image_extras = { version = "0.1", default-features = true }
 
 # JPEG segment manipulation (gainmap / APP2 / EXIF preservation)
 img-parts  = "0.4"
