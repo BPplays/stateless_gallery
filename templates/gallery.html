@@ -619,23 +619,30 @@
             current = ((current + direction) % n + n) % n;
 
             // ── DOM reshuffle ─────────────────────────────────────────────────
-            // The arriving slot is already showing the correct image from when
-            // loadAllSlots() populated it. We just swap src references between
-            // slots and load a new image into the now-vacated far slot.
+            // The arriving slot already shows the correct image (populated by
+            // loadAllSlots when the lightbox opened / last navigation ran).
+            // Swap src references between slots, but do NOT start loading the
+            // vacated far slot here — that happens below in requestIdleCallback
+            // so it doesn't compete with the post-animation repaint.
             lbTrack.style.transition = "none";
 
+            // Capture which slot needs filling and which image goes there,
+            // before we modify the srcs.
+            var slotToFill, imgToLoad;
             if (direction > 0) {
                 // Moved to next: arriving slot was lbImgNext.
-                // new prev = old curr, new curr = old next, new next = load(current+1)
+                slotToFill = lbImgNext;
+                imgToLoad  = IMAGES[(current + 1) % n];
                 lbImgPrev.src = lbImgCurr.src;  lbImgPrev.alt = lbImgCurr.alt;
                 lbImgCurr.src = lbImgNext.src;  lbImgCurr.alt = lbImgNext.alt;
-                loadIntoSlot(lbImgNext, IMAGES[(current + 1) % n], false);
+                lbImgNext.src = "";              lbImgNext.alt = "";
             } else {
                 // Moved to prev: arriving slot was lbImgPrev.
-                // new next = old curr, new curr = old prev, new prev = load(current-1)
+                slotToFill = lbImgPrev;
+                imgToLoad  = IMAGES[(current - 1 + n) % n];
                 lbImgNext.src = lbImgCurr.src;  lbImgNext.alt = lbImgCurr.alt;
                 lbImgCurr.src = lbImgPrev.src;  lbImgCurr.alt = lbImgPrev.alt;
-                loadIntoSlot(lbImgPrev, IMAGES[(current - 1 + n) % n], false);
+                lbImgPrev.src = "";              lbImgPrev.alt = "";
             }
 
             // Reset track to centre without a visible jump.
@@ -646,19 +653,33 @@
             lbCounter.textContent = "(" + (current + 1) + "\u202f/\u202f" + n + ")";
             setHashForIndex(current);
             updateTopbarButtons(current);
-            preloadAdjacent(current);
 
             // Re-enable transition one frame later so the snap isn't animated.
             requestAnimationFrame(function () {
                 lbTrack.style.transition = "";
                 swipeAnimating = false;
             });
+
+            // ── Deferred background work ──────────────────────────────────────
+            // Load the vacated far slot and kick off ±2 preloads only when the
+            // browser is idle. This keeps the post-animation repaint smooth
+            // even when the target image hasn't been fetched yet.
+            var idleWork = function () {
+                loadIntoSlot(slotToFill, imgToLoad, false);
+                preloadAdjacent(current);
+            };
+            if (typeof requestIdleCallback === "function") {
+                requestIdleCallback(idleWork, { timeout: 500 });
+            } else {
+                // Safari <16 / older browsers: small delay is enough.
+                setTimeout(idleWork, 100);
+            }
         }, ANIM_MS + 10);
     }
 
     // ── Share button ──────────────────────────────────────────────────────────
     lbShare.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-    lbShare.addEventListener("mousedown", function () {
+    lbShare.addEventListener("click", function () {
         var img = IMAGES[current];
         if (!img) return;
         var url = location.href;
