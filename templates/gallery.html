@@ -471,12 +471,8 @@
     // Non-swipe navigation (keyboard / arrow buttons): cross-fade the centre
     // slot and update all three positions for the next swipe.
     function navigate(delta) {
-        if (IMAGES.length === 0) return;
-        current = ((current + delta) % IMAGES.length + IMAGES.length) % IMAGES.length;
-        loadAllSlots(current);
-        setHashForIndex(current);
-        updateTopbarButtons(current);
-        preloadAdjacent(current);
+        if (IMAGES.length === 0 || swipeAnimating) return;
+        commitSwipe(delta);
     }
 
     // ── Open from hash on page load ───────────────────────────────────────────
