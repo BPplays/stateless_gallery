@@ -3,13 +3,52 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>__TITLE__</title>
+
+        <!--
+            Image data available early — before any other scripts run.
+            type="application/json" is inert (browser never executes it)
+            but makes the data available to the inline script below via
+            getElementById, without blocking rendering.
+        -->
+        <script type="application/json" id="gallery-data">__IMAGES_JSON__</script>
+
+        <!--
+            Critical path: if the URL has a hash, inject a high-priority
+            preload for the lightbox image immediately during HTML parse.
+            This starts the fetch hundreds of milliseconds earlier than
+            waiting for the bottom-of-body script to run, directly cutting
+            the LCP "Resource load delay" reported by Lighthouse.
+        -->
+        <script>
+        (function () {
+            var hash = location.hash;
+            if (!hash) return;
+            try {
+                var name   = decodeURIComponent(hash.slice(1));
+                var images = JSON.parse(document.getElementById("gallery-data").textContent);
+                for (var i = 0; i < images.length; i++) {
+                    if (images[i].name === name) {
+                        var link = document.createElement("link");
+                        link.rel  = "preload";
+                        link.as   = "image";
+                        link.href = images[i].full;
+                        link.setAttribute("fetchpriority", "high");
+                        document.head.appendChild(link);
+                        break;
+                    }
+                }
+            } catch (e) {}
+        }());
+        </script>
+
+        <!--
+            Fonts: async load (media="print" trick) so they never block
+            the initial render. The font stack falls back to system fonts
+            immediately; Inter/Noto load and swap in once available.
+        -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <!--
-            Load fonts asynchronously: media="print" makes the browser fetch
-            without blocking render; onload switches it to screen media once
-            the CSS arrives. Falls back to a normal blocking load for no-JS.
-        -->
         <link rel="preload" as="style"
               href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap">
         <link rel="stylesheet" media="print"
@@ -19,7 +58,6 @@
             <link rel="stylesheet"
                   href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap">
         </noscript>
-        <title>__TITLE__</title>
         <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -336,132 +374,67 @@
     const lbShare     = document.getElementById("lb-share");
 
     // ── Render grid ───────────────────────────────────────────────────────────
-    // Images above the fold are appended synchronously in the first batch so
-    // the browser can start fetching them immediately.  The rest are appended
-    // in idle-time chunks so grid construction never blocks input or animation.
-    //
-    // LCP handling:
-    //   • i === 0  → loading="eager" fetchpriority="high"  (the LCP element)
-    //   • i < EAGER_COUNT → loading="eager"               (above-the-fold)
-    //   • rest     → loading="lazy"                        (deferred)
-    //
-    // EAGER_COUNT covers roughly 4 columns × 4 rows at desktop (180px tiles,
-    // 1280px viewport) which is more than enough for any realistic fold line.
-    var EAGER_COUNT = 24;
-    var GRID_BATCH  = 40; // items per idle chunk for remaining images
-
-    function makeThumbItem(img, i) {
-        var item = document.createElement("div");
-        item.className = "thumb-item";
-        item.setAttribute("role", "listitem");
-        item.setAttribute("tabindex", "0");
-        item.setAttribute("aria-label", img.name);
-
-        var el = document.createElement("img");
-        el.src     = img.thumb;
-        el.alt     = img.name;
-        el.decoding = "async";
-
-        if (i === 0) {
-            // LCP image: tell the browser to fetch this immediately and at
-            // high priority.  Lighthouse requires both attributes on the LCP.
-            el.loading = "eager";
-            el.setAttribute("fetchpriority", "high");
-        } else if (i < EAGER_COUNT) {
-            el.loading = "eager";
-        } else {
-            el.loading = "lazy";
-        }
-
-        var label = document.createElement("div");
-        label.className  = "label";
-        label.textContent = img.name;
-
-        item.appendChild(el);
-        item.appendChild(label);
-
-        // Capture i in a closure for the event handlers.
-        (function (idx) {
-            function open() { openLightbox(idx); }
-            item.addEventListener("mousedown", open);
-            item.addEventListener("keydown", function (e) {
-                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
-            });
-        }(i));
-
-        return item;
-    }
-
     function buildGrid(images) {
         gallery.innerHTML = "";
-
         if (images.length === 0) {
             gallery.innerHTML = '<p class="empty">No images found. Check that <code>photo_dirs</code> in your config points to a directory with supported image files.</p>';
             return;
         }
+        images.forEach(function (img, i) {
+            const item = document.createElement("div");
+            item.className = "thumb-item";
+            item.setAttribute("role", "listitem");
+            item.setAttribute("tabindex", "0");
+            item.setAttribute("aria-label", img.name);
 
-        // First batch: synchronous, so the LCP image appears in the first paint.
-        var firstCount = Math.min(EAGER_COUNT, images.length);
-        var frag = document.createDocumentFragment();
-        for (var i = 0; i < firstCount; i++) {
-            frag.appendChild(makeThumbItem(images[i], i));
-        }
-        gallery.appendChild(frag);
+            const el = document.createElement("img");
+            el.src = img.thumb; el.alt = img.name;
+            el.loading = "lazy"; el.decoding = "async";
 
-        if (images.length <= firstCount) return;
+            const label = document.createElement("div");
+            label.className = "label";
+            label.textContent = img.name;
 
-        // Remaining batches: deferred until the browser is idle.
-        var nextIndex = firstCount;
+            item.appendChild(el);
+            item.appendChild(label);
 
-        function appendNextBatch() {
-            if (nextIndex >= images.length) return;
-
-            var end  = Math.min(nextIndex + GRID_BATCH, images.length);
-            var frag = document.createDocumentFragment();
-            for (var j = nextIndex; j < end; j++) {
-                frag.appendChild(makeThumbItem(images[j], j));
-            }
-            gallery.appendChild(frag);
-            nextIndex = end;
-
-            if (nextIndex < images.length) {
-                scheduleIdle(appendNextBatch);
-            }
-        }
-
-        scheduleIdle(appendNextBatch);
+            function open() { openLightbox(i); }
+            item.addEventListener("mousedown", open);
+            item.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+            });
+            gallery.appendChild(item);
+        });
     }
-
-    // scheduleIdle: requestIdleCallback with a 200 ms deadline fallback,
-    // degrades to setTimeout on browsers that don't support rIC (iOS <16).
-    function scheduleIdle(fn) {
-        if (typeof requestIdleCallback === "function") {
-            requestIdleCallback(fn, { timeout: 200 });
-        } else {
-            setTimeout(fn, 0);
-        }
-    }
-
-    buildGrid(IMAGES);
 
     // ── Preload cache ─────────────────────────────────────────────────────────
-    // Maps full URL → decoded HTMLImageElement.
-    // pre.decode() forces bitmap decoding on a background thread immediately,
-    // so the image is truly ready to paint when swapped into the visible slot.
+    // Maps full URL → HTMLImageElement confirmed loaded + decoded.
+    // We always wait for onload before calling decode() — iOS Safari's decode()
+    // rejects immediately on an unloaded image which caches a broken element.
     const preloadCache    = new Map();
     const preloadInFlight = new Set();
 
     function preloadUrl(url) {
         if (preloadCache.has(url) || preloadInFlight.has(url)) return;
         preloadInFlight.add(url);
-        const pre = new Image();
-        pre.src = url;
-        pre.decode()
-            .catch(function () {})   // AVIF decode() can fail on some browsers; degrade gracefully
-            .finally(function () {
+        var pre = new Image();
+        pre.onload = function () {
+            // decode() pre-warms the GPU texture so navigation is instant.
+            // Only used here (off-screen preload), never on the visible slot.
+            if (typeof pre.decode === "function") {
+                pre.decode()
+                    .catch(function () {})
+                    .finally(function () {
+                        preloadCache.set(url, pre);
+                        preloadInFlight.delete(url);
+                    });
+            } else {
                 preloadCache.set(url, pre);
                 preloadInFlight.delete(url);
-            });
+            }
+        };
+        pre.onerror = function () { preloadInFlight.delete(url); };
+        pre.src = url;
     }
 
     function preloadAdjacent(index) {
@@ -473,15 +446,15 @@
     }
 
     // ── Slot loading ──────────────────────────────────────────────────────────
-    // Load an image into any of the three slide img elements.
-    // showSpinner=true only for the centre slot on an explicit navigation —
-    // side slots load silently.
-    let loadingImg = null;
+    // Generation counter replaces the old loadingImg sentinel.
+    // Incremented every time the visible (centre) slot gets a new load request.
+    // Async callbacks check their captured generation and bail if stale.
+    var loadGeneration = 0;
 
     function loadIntoSlot(slotEl, imgData, showSpinner) {
         if (!imgData) return;
 
-        // Cache hit: the decoded bitmap is already in memory, swap instantly.
+        // ── Cache hit ─────────────────────────────────────────────────────────
         if (preloadCache.has(imgData.full)) {
             slotEl.src = preloadCache.get(imgData.full).src;
             slotEl.alt = imgData.name;
@@ -493,41 +466,83 @@
         }
 
         if (showSpinner) {
+            // ── Visible (LCP) slot ────────────────────────────────────────────
+            // Set src directly on the real <img> element and let the browser's
+            // own rendering pipeline handle decode and paint.
+            // DO NOT use an off-screen Image() + decode() here — that adds
+            // explicit decode latency before first paint, which is what causes
+            // the "Element render delay" reported by Lighthouse.
+            var myGen = ++loadGeneration;
+
             lbImgCurr.classList.add("fading");
             lbSpinner.classList.add("visible");
-        }
+            lbImgCurr.setAttribute("fetchpriority", "high");
 
-        const newImg = new Image();
-        if (showSpinner) loadingImg = newImg;
-        const captured = newImg;
+            lbImgCurr.onload = function () {
+                if (myGen !== loadGeneration) return; // navigated away
+                preloadCache.set(imgData.full, lbImgCurr);
+                lbImgCurr.classList.remove("fading");
+                lbSpinner.classList.remove("visible");
+                lbImgCurr.onload  = null;
+                lbImgCurr.onerror = null;
+            };
+            lbImgCurr.onerror = function () {
+                if (myGen !== loadGeneration) return;
+                lbImgCurr.classList.remove("fading");
+                lbSpinner.classList.remove("visible");
+                lbImgCurr.onload  = null;
+                lbImgCurr.onerror = null;
+            };
 
-        newImg.src = imgData.full;
-        newImg.decode()
-            .catch(function () {})
-            .finally(function () {
-                if (showSpinner && loadingImg !== captured) return; // navigated away
-                preloadCache.set(imgData.full, newImg);
-                slotEl.src = newImg.src;
-                slotEl.alt = imgData.name;
-                if (showSpinner) {
-                    lbImgCurr.classList.remove("fading");
-                    lbSpinner.classList.remove("visible");
-                    loadingImg = null;
+            lbImgCurr.src = imgData.full;
+            lbImgCurr.alt = imgData.name;
+
+        } else {
+            // ── Side / background slot ────────────────────────────────────────
+            // Off-screen Image() + onload → decode() so the bitmap is fully
+            // pre-warmed before the user swipes to it.
+            var newImg = new Image();
+            newImg.onload = function () {
+                if (typeof newImg.decode === "function") {
+                    newImg.decode()
+                        .catch(function () {})
+                        .finally(function () {
+                            preloadCache.set(imgData.full, newImg);
+                            // Only update the slot src if it's still waiting
+                            // (it may have been cleared by a reshuffle)
+                            if (!slotEl.src || slotEl.src === window.location.href) {
+                                slotEl.src = newImg.src;
+                                slotEl.alt = imgData.name;
+                            }
+                        });
+                } else {
+                    preloadCache.set(imgData.full, newImg);
+                    if (!slotEl.src || slotEl.src === window.location.href) {
+                        slotEl.src = newImg.src;
+                        slotEl.alt = imgData.name;
+                    }
                 }
-            });
+            };
+            newImg.onerror = function () {}; // silently ignore background failures
+            newImg.src = imgData.full;
+        }
     }
 
     // Populate all three slots for a given centre index.
+    // Side slots are deferred by one rAF so the centre image gets
+    // first priority on network connections and decode resources.
     function loadAllSlots(index) {
-        const n = IMAGES.length;
-        if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
+        var n = IMAGES.length;
         lbName.textContent    = IMAGES[index].name;
         lbCounter.textContent = "(" + (index + 1) + "\u202f/\u202f" + n + ")";
 
         loadIntoSlot(lbImgCurr, IMAGES[index], true);
+
         if (n > 1) {
-            loadIntoSlot(lbImgPrev, IMAGES[(index - 1 + n) % n], false);
-            loadIntoSlot(lbImgNext, IMAGES[(index + 1) % n],     false);
+            requestAnimationFrame(function () {
+                loadIntoSlot(lbImgPrev, IMAGES[(index - 1 + n) % n], false);
+                loadIntoSlot(lbImgNext, IMAGES[(index + 1) % n],     false);
+            });
         }
     }
 
@@ -569,7 +584,9 @@
         lightbox.classList.remove("open");
         document.body.style.overflow = "";
         clearHash();
-        if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
+        loadGeneration++; // cancel any in-flight centre-slot load
+        lbImgCurr.onload  = null;
+        lbImgCurr.onerror = null;
         lbImgCurr.classList.remove("fading");
         lbSpinner.classList.remove("visible");
     }
@@ -582,9 +599,22 @@
     }
 
     // ── Open from hash on page load ───────────────────────────────────────────
+    // When a hash URL is used, open the lightbox immediately and defer
+    // building the grid — the user is looking at the lightbox, not the grid,
+    // and we don't want thumbnail fetches competing with the LCP image fetch.
     (function () {
         var i = indexFromHash();
-        if (i >= 0) openLightbox(i);
+        if (i >= 0) {
+            openLightbox(i);
+            // Build grid lazily once the browser is idle
+            if (typeof requestIdleCallback === "function") {
+                requestIdleCallback(function () { buildGrid(IMAGES); }, { timeout: 2000 });
+            } else {
+                setTimeout(function () { buildGrid(IMAGES); }, 200);
+            }
+        } else {
+            buildGrid(IMAGES);
+        }
     }());
 
     // ── Handle browser back/forward ───────────────────────────────────────────
@@ -597,7 +627,9 @@
             if (lightbox.classList.contains("open")) {
                 lightbox.classList.remove("open");
                 document.body.style.overflow = "";
-                if (loadingImg) { loadingImg.src = ""; loadingImg = null; }
+                loadGeneration++;
+                lbImgCurr.onload  = null;
+                lbImgCurr.onerror = null;
             }
         }
     });
