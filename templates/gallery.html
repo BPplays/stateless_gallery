@@ -658,7 +658,7 @@
 
     // ── Share button ──────────────────────────────────────────────────────────
     lbShare.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-    lbShare.addEventListener("click", function () {
+    lbShare.addEventListener("mousedown", function () {
         var img = IMAGES[current];
         if (!img) return;
         var url = location.href;
