@@ -146,6 +146,21 @@
             display: flex; gap: 8px; align-items: center;
             z-index: 2;
         }
+        #lb-fullscreen {
+            position: absolute; top: 16px; left: 16px;
+            width: 38px; height: 38px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.14);
+            background: rgba(255,255,255,.07);
+            color: rgba(255,255,255,.65);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .15s, color .15s, border-color .15s;
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            z-index: 2;
+        }
+        #lb-fullscreen:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
+        /* Hide on devices that don't support fullscreen (e.g. iOS Safari) */
+        #lb-fullscreen.unsupported { display: none; }
         .lb-top-btn {
             width: 38px; height: 38px; border-radius: 50%;
             border: 1px solid rgba(255,255,255,.14);
@@ -254,6 +269,11 @@
                 </div>
             </div>
             <div id="lb-spinner" aria-hidden="true"></div>
+
+            <button id="lb-fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">
+                <svg id="lb-fs-enter" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                <svg id="lb-fs-exit" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+            </button>
 
             <div id="lb-topbar">
                 <button class="lb-top-btn" id="lb-share" aria-label="Share image" title="Share">
@@ -543,7 +563,7 @@
     lightbox.addEventListener("touchstart", function (e) {
         if (swipeAnimating) return;
         if (e.touches.length !== 1) return;
-        if (e.target.closest("#lb-topbar") || e.target.closest("#lb-caption")) return;
+        if (e.target.closest("#lb-topbar") || e.target.closest("#lb-caption") || e.target.closest("#lb-fullscreen")) return;
         touchStartX    = e.touches[0].clientX;
         touchStartY    = e.touches[0].clientY;
         touchStartTime = Date.now();
@@ -677,9 +697,43 @@
         }, ANIM_MS + 10);
     }
 
+    // ── Fullscreen ────────────────────────────────────────────────────────────
+    (function () {
+        var btn      = document.getElementById("lb-fullscreen");
+        var iconEnter = document.getElementById("lb-fs-enter");
+        var iconExit  = document.getElementById("lb-fs-exit");
+
+        // Hide the button entirely on browsers without Fullscreen API (iOS Safari).
+        if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) {
+            btn.classList.add("unsupported");
+            return;
+        }
+
+        btn.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+        btn.addEventListener("mousedown", function () {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                var el = lightbox;
+                if (el.requestFullscreen)       el.requestFullscreen();
+                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            } else {
+                if (document.exitFullscreen)        document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            }
+        });
+
+        function onFsChange() {
+            var active = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            iconEnter.style.display = active ? "none"  : "";
+            iconExit.style.display  = active ? ""      : "none";
+            btn.setAttribute("aria-label", active ? "Exit fullscreen" : "Toggle fullscreen");
+        }
+        document.addEventListener("fullscreenchange",       onFsChange);
+        document.addEventListener("webkitfullscreenchange", onFsChange);
+    }());
+
     // ── Share button ──────────────────────────────────────────────────────────
     lbShare.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-    lbShare.addEventListener("click", function () {
+    lbShare.addEventListener("mousedown", function () {
         var img = IMAGES[current];
         if (!img) return;
         var url = location.href;
@@ -705,7 +759,7 @@
     (function () {
         var btn = document.getElementById("lb-copy");
         btn.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-        btn.addEventListener("click", function () {
+        btn.addEventListener("mousedown", function () {
             var url = location.href;
             navigator.clipboard.writeText(url).then(function () {
                 btn.classList.add("copied");
