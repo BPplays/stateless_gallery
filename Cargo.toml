@@ -23,7 +23,7 @@ image      = { version = "0.25", default-features = true, features = [
     "ico", "exr", "ff",
     "serde", "rayon"
 ] }
-image_extras = { version = "0.1", default-features = true }
+image-extras = { version = "0.1", default-features = true }
 
 # JPEG segment manipulation (gainmap / APP2 / EXIF preservation)
 img-parts  = "0.4"
