@@ -5,21 +5,13 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>__TITLE__</title>
 
-        <!--
-            Image data available early — before any other scripts run.
-            type="application/json" is inert (browser never executes it)
-            but makes the data available to the inline script below via
-            getElementById, without blocking rendering.
-        -->
+        <!-- Image data embedded early so the preload script below can read it
+             without waiting for the body script to execute. -->
         <script type="application/json" id="gallery-data">__IMAGES_JSON__</script>
 
-        <!--
-            Critical path: if the URL has a hash, inject a high-priority
-            preload for the lightbox image immediately during HTML parse.
-            This starts the fetch hundreds of milliseconds earlier than
-            waiting for the bottom-of-body script to run, directly cutting
-            the LCP "Resource load delay" reported by Lighthouse.
-        -->
+        <!-- If the page was opened with a hash (direct link to an image),
+             inject a high-priority preload immediately during HTML parse
+             to minimise LCP resource load delay. -->
         <script>
         (function () {
             var hash = location.hash;
@@ -42,11 +34,9 @@
         }());
         </script>
 
-        <!--
-            Fonts: async load (media="print" trick) so they never block
-            the initial render. The font stack falls back to system fonts
-            immediately; Inter/Noto load and swap in once available.
-        -->
+        <!-- Fonts loaded async (media="print" trick) so they never block
+             the initial render. System fonts display immediately; Inter/Noto
+             swap in once the stylesheet arrives. -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="preload" as="style"
@@ -58,6 +48,7 @@
             <link rel="stylesheet"
                   href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap">
         </noscript>
+
         <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -82,42 +73,31 @@
 
         /* ── Header ─────────────────────────────────────────────── */
         header {
-            display: flex;
-            align-items: baseline;
-            gap: 14px;
+            display: flex; align-items: baseline; gap: 14px;
             padding: 20px 24px 14px;
             border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            background: var(--bg);
-            z-index: 10;
+            position: sticky; top: 0;
+            background: var(--bg); z-index: 10;
         }
-        header h1   { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; color: var(--accent); }
+        header h1    { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; color: var(--accent); }
         header .count { font-size: 0.8rem; color: var(--muted); }
 
         /* ── Gallery grid ────────────────────────────────────────── */
         #gallery {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: var(--gap);
-            padding: var(--gap);
+            gap: var(--gap); padding: var(--gap);
         }
-
         .thumb-item {
-            aspect-ratio: 1 / 1;
-            overflow: hidden;
-            background: var(--surface);
-            cursor: pointer;
-            position: relative;
-            border-radius: var(--radius);
+            aspect-ratio: 1; overflow: hidden;
+            background: var(--surface); cursor: pointer;
+            position: relative; border-radius: var(--radius);
         }
         .thumb-item img {
-            width: 100%; height: 100%;
-            object-fit: cover; display: block;
-            transition: transform .35s cubic-bezier(.25,.46,.45,.94), opacity .2s ease;
+            width: 100%; height: 100%; object-fit: cover; display: block;
+            transition: transform .35s cubic-bezier(.25,.46,.45,.94), opacity .2s;
         }
         .thumb-item:hover img { transform: scale(1.055); opacity: .88; }
-
         .thumb-item .label {
             position: absolute; inset: auto 0 0 0;
             padding: 28px 10px 10px;
@@ -129,8 +109,6 @@
             border-radius: 0 0 var(--radius) var(--radius);
         }
         .thumb-item:hover .label { opacity: 1; }
-
-        /* ── Empty state ─────────────────────────────────────────── */
         .empty {
             grid-column: 1/-1; text-align: center;
             padding: 80px 20px; color: var(--muted); font-size: .95rem;
@@ -139,66 +117,40 @@
         /* ── Lightbox ────────────────────────────────────────────── */
         #lightbox {
             display: none; position: fixed; inset: 0; z-index: 1000;
-            background: rgba(5,5,5,.97);
-            overflow: hidden;
+            background: rgba(5,5,5,.97); overflow: hidden;
         }
         #lightbox.open { display: block; }
 
-        /* Stage clips the track to exactly one viewport width. */
-        #lb-stage {
-            position: absolute; inset: 0;
-            overflow: hidden;
-        }
+        /* Stage: clips the track to one viewport width */
+        #lb-stage { position: absolute; inset: 0; overflow: hidden; }
 
-        /*
-         * Three-slot image track: [prev][curr][next]
-         * Width is 300% of the stage so each slot = 100% of the stage.
-         * Default translateX(-33.333%) centres the middle slot.
-         * During a swipe the JS applies translateX(calc(-33.333% + Npx)).
-         * On commit it animates to -66.666% or 0%, then instantly reshuffles
-         * the DOM and snaps back to -33.333% — no network hit, no flicker.
-         */
+        /* Three-slot track: [prev | curr | next]
+           300% wide so each slot = 100vw.
+           Default translateX(-33.333%) centres the middle slot.
+           will-change applied by JS only during active drag/animation. */
         #lb-track {
-            display: flex;
-            width: 300%;
-            height: 100%;
+            display: flex; width: 300%; height: 100%;
             transform: translateX(-33.333%);
-            will-change: transform;
         }
-
         .lb-slide {
-            /* Each slot = 1/3 of 300% track = 100% of stage */
-            width: 33.333%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+            width: 33.333%; height: 100%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
         }
-
         .lb-slide img {
             max-width: 100%; max-height: 100%;
             width: 100%; height: 100%;
-            object-fit: contain; display: block;
-            border-radius: 2px;
+            object-fit: contain; display: block; border-radius: 2px;
             user-select: none; -webkit-user-drag: none;
         }
-
-        /* Fade transition and shadow only on the active centre slot. */
+        /* Shadow + fade only on the visible centre slot */
         #lb-slide-curr img {
             box-shadow: 0 8px 60px rgba(0,0,0,.7);
             transition: opacity .15s ease;
         }
         #lb-slide-curr img.fading { opacity: 0; }
 
-        /* ── Top-right button group ──────────────────────────────── */
-        #lb-topbar {
-            position: absolute; top: 16px; right: 16px;
-            display: flex; gap: 8px; align-items: center;
-            z-index: 2;
-        }
-        #lb-fullscreen {
-            position: absolute; top: 16px; left: 16px;
+        /* ── Shared button style ─────────────────────────────────── */
+        .lb-icon-btn {
             width: 38px; height: 38px; border-radius: 50%;
             border: 1px solid rgba(255,255,255,.14);
             background: rgba(255,255,255,.07);
@@ -207,39 +159,37 @@
             display: flex; align-items: center; justify-content: center;
             transition: background .15s, color .15s, border-color .15s;
             backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-            z-index: 2;
-        }
-        #lb-fullscreen:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
-        /* Hide on devices that don't support fullscreen (e.g. iOS Safari) */
-        #lb-fullscreen.unsupported { display: none; }
-        .lb-top-btn {
-            width: 38px; height: 38px; border-radius: 50%;
-            border: 1px solid rgba(255,255,255,.14);
-            background: rgba(255,255,255,.07);
-            color: rgba(255,255,255,.65);
-            font-size: 1rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: background .15s, color .15s, border-color .15s;
-            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
             text-decoration: none;
         }
-        .lb-top-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
-        .lb-top-btn.active { color: #6ee7b7; border-color: #6ee7b7; }
+        .lb-icon-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
+        .lb-icon-btn.active { color: #6ee7b7; border-color: #6ee7b7; }
 
-        /* ── Nav arrows (hidden on touch devices) ────────────────── */
-        .lb-btn {
+        /* ── Top-left: fullscreen ────────────────────────────────── */
+        #lb-fullscreen {
+            position: absolute; top: 16px; left: 16px; z-index: 2;
+        }
+        #lb-fullscreen.unsupported { display: none; }
+
+        /* ── Top-right: share / download / close ─────────────────── */
+        #lb-topbar {
+            position: absolute; top: 16px; right: 16px;
+            display: flex; gap: 8px; align-items: center; z-index: 2;
+        }
+
+        /* ── Nav arrows (desktop only) ───────────────────────────── */
+        .lb-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
             width: 48px; height: 48px; border-radius: 50%;
             border: 1px solid rgba(255,255,255,.14);
             background: rgba(255,255,255,.07);
             color: rgba(255,255,255,.75);
-            font-size: 1.3rem; cursor: pointer;
+            font-size: 1.3rem; cursor: pointer; line-height: 1;
             display: flex; align-items: center; justify-content: center;
             transition: background .15s, color .15s, border-color .15s;
             backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-            z-index: 2; line-height: 1;
+            z-index: 2;
         }
-        .lb-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
+        .lb-nav-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
         #lb-prev { left: 16px; }
         #lb-next { right: 16px; }
         @media (pointer: coarse) { #lb-prev, #lb-next { display: none; } }
@@ -251,26 +201,24 @@
             display: flex; align-items: baseline; gap: 10px;
             background: linear-gradient(transparent, rgba(0,0,0,.55));
             opacity: 0; z-index: 2;
-            pointer-events: none;
-            transition: opacity .2s;
+            pointer-events: none; transition: opacity .2s;
         }
         #lb-caption:hover { opacity: 1; }
         #lb-name    { font-size: .82rem; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #lb-counter { font-size: .75rem; color: rgba(255,255,255,.35); white-space: nowrap; flex-shrink: 0; }
         #lb-copy {
-            flex-shrink: 0; margin-left: auto;
+            flex-shrink: 0; margin-left: auto; pointer-events: auto;
             background: none; border: 1px solid rgba(255,255,255,.18);
             border-radius: 5px; color: rgba(255,255,255,.45);
             padding: 4px 8px; cursor: pointer;
             display: flex; align-items: center; gap: 5px;
             font-size: .72rem; font-family: inherit;
             transition: background .15s, color .15s, border-color .15s;
-            pointer-events: auto;
         }
-        #lb-copy:hover { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35); }
+        #lb-copy:hover  { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35); }
         #lb-copy.copied { color: #6ee7b7; border-color: #6ee7b7; }
 
-        /* ── Spinner ─────────────────────────────────────────────── */
+        /* ── Loading spinner ─────────────────────────────────────── */
         #lb-spinner {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%,-50%);
@@ -279,13 +227,13 @@
             border-top-color: rgba(255,255,255,.55);
             border-radius: 50%;
             animation: spin .7s linear infinite;
-            opacity: 0; transition: opacity .2s; pointer-events: none;
-            z-index: 3;
+            opacity: 0; transition: opacity .2s;
+            pointer-events: none; z-index: 3;
         }
         #lb-spinner.visible { opacity: 1; }
         @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
 
-        /* ── Live-reload toast ───────────────────────────────────── */
+        /* ── Hot-reload toast ────────────────────────────────────── */
         #reload-toast {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(40,40,40,.92); color: #e2e2e2;
@@ -321,30 +269,34 @@
             </div>
             <div id="lb-spinner" aria-hidden="true"></div>
 
-            <button id="lb-fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">
+            <!-- Top-left: fullscreen -->
+            <button class="lb-icon-btn" id="lb-fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">
                 <svg id="lb-fs-enter" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
                 <svg id="lb-fs-exit" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
             </button>
 
+            <!-- Top-right: share / download / close -->
             <div id="lb-topbar">
-                <button class="lb-top-btn" id="lb-share" aria-label="Share image" title="Share">
+                <button class="lb-icon-btn" id="lb-share" aria-label="Share" title="Share">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                 </button>
-                <a class="lb-top-btn" id="lb-download" aria-label="Download image" title="Download" download>
+                <a class="lb-icon-btn" id="lb-download" aria-label="Download" title="Download" download>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </a>
-                <button class="lb-top-btn" id="lb-close" aria-label="Close">
+                <button class="lb-icon-btn" id="lb-close" aria-label="Close">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
 
-            <button class="lb-btn" id="lb-prev" aria-label="Previous image">&#8249;</button>
-            <button class="lb-btn" id="lb-next" aria-label="Next image">&#8250;</button>
+            <!-- Nav arrows (hidden on touch devices via CSS) -->
+            <button class="lb-nav-btn" id="lb-prev" aria-label="Previous image">&#8249;</button>
+            <button class="lb-nav-btn" id="lb-next" aria-label="Next image">&#8250;</button>
 
+            <!-- Caption + copy-link -->
             <div id="lb-caption" aria-live="polite">
                 <span id="lb-name"></span>
                 <span id="lb-counter"></span>
-                <button id="lb-copy" title="Copy link to this image" aria-label="Copy link to this image">
+                <button id="lb-copy" title="Copy link" aria-label="Copy link to this image">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                 </button>
             </div>
@@ -356,24 +308,37 @@
 (function () {
     "use strict";
 
-    let IMAGES = __IMAGES_JSON__;
+    // ── Data (server-injected) ────────────────────────────────────────────────
+    var IMAGES = __IMAGES_JSON__;
+
+    // ── Config ────────────────────────────────────────────────────────────────
+    //
+    // SIDE_SLOT_THUMBS
+    //   true  → side slots (prev/next) display the thumbnail immediately.
+    //            Full-res is fetched in the background and swaps in when this
+    //            slot becomes the active centre slot.
+    //            Lower bandwidth: full-res only loaded for images actually viewed.
+    //   false → side slots load and display full-res immediately.
+    //            Smoother swipe (no upgrade step), at the cost of fetching
+    //            full-res images the user may not end up viewing.
+    var SIDE_SLOT_THUMBS = true;
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
-    const gallery     = document.getElementById("gallery");
-    const lightbox    = document.getElementById("lightbox");
-    const lbTrack     = document.getElementById("lb-track");
-    const lbImgPrev   = document.getElementById("lb-img-prev");
-    const lbImgCurr   = document.getElementById("lb-img-curr");
-    const lbImgNext   = document.getElementById("lb-img-next");
-    const lbSpinner   = document.getElementById("lb-spinner");
-    const lbName      = document.getElementById("lb-name");
-    const lbCounter   = document.getElementById("lb-counter");
-    const countEl     = document.getElementById("js-count");
-    const reloadToast = document.getElementById("reload-toast");
-    const lbDownload  = document.getElementById("lb-download");
-    const lbShare     = document.getElementById("lb-share");
+    var gallery    = document.getElementById("gallery");
+    var lightbox   = document.getElementById("lightbox");
+    var lbTrack    = document.getElementById("lb-track");
+    var lbImgPrev  = document.getElementById("lb-img-prev");
+    var lbImgCurr  = document.getElementById("lb-img-curr");
+    var lbImgNext  = document.getElementById("lb-img-next");
+    var lbSpinner  = document.getElementById("lb-spinner");
+    var lbName     = document.getElementById("lb-name");
+    var lbCounter  = document.getElementById("lb-counter");
+    var countEl    = document.getElementById("js-count");
+    var reloadToast = document.getElementById("reload-toast");
+    var lbDownload = document.getElementById("lb-download");
+    var lbShare    = document.getElementById("lb-share");
 
-    // ── Render grid ───────────────────────────────────────────────────────────
+    // ── Grid ─────────────────────────────────────────────────────────────────
     function buildGrid(images) {
         gallery.innerHTML = "";
         if (images.length === 0) {
@@ -381,167 +346,209 @@
             return;
         }
         images.forEach(function (img, i) {
-            const item = document.createElement("div");
+            var item  = document.createElement("div");
             item.className = "thumb-item";
             item.setAttribute("role", "listitem");
             item.setAttribute("tabindex", "0");
             item.setAttribute("aria-label", img.name);
 
-            const el = document.createElement("img");
+            var el = document.createElement("img");
             el.src = img.thumb; el.alt = img.name;
             el.loading = "lazy"; el.decoding = "async";
 
-            const label = document.createElement("div");
+            var label = document.createElement("div");
             label.className = "label";
             label.textContent = img.name;
 
             item.appendChild(el);
             item.appendChild(label);
 
-            function open() { openLightbox(i); }
-            item.addEventListener("mousedown", open);
-            item.addEventListener("keydown", function (e) {
-                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
-            });
+            (function (idx) {
+                function open() { openLightbox(idx); }
+                item.addEventListener("mousedown", open);
+                item.addEventListener("keydown", function (e) {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+                });
+            }(i));
+
             gallery.appendChild(item);
         });
     }
 
-    // ── Preload cache ─────────────────────────────────────────────────────────
-    // Maps full URL → HTMLImageElement confirmed loaded + decoded.
-    // We always wait for onload before calling decode() — iOS Safari's decode()
-    // rejects immediately on an unloaded image which caches a broken element.
-    const preloadCache    = new Map();
-    const preloadInFlight = new Set();
+    // ── Image fetcher ─────────────────────────────────────────────────────────
+    //
+    // fetchImg(url, onDone, onFail)
+    //   Unified fetch+decode pipeline with request deduplication.
+    //   • Returns cached result immediately if available.
+    //   • Piggybacks callbacks onto an existing in-flight request for the same
+    //     URL rather than starting a duplicate network request.
+    //   • Always waits for onload before calling decode() — calling decode()
+    //     on an unloaded Image rejects immediately on iOS Safari, which would
+    //     cache a broken element.
+    var imgCache  = new Map(); // url → decoded Image element
+    var imgFlight = new Map(); // url → { img, cbs: [{onDone, onFail}] }
 
-    function preloadUrl(url) {
-        if (preloadCache.has(url) || preloadInFlight.has(url)) return;
-        preloadInFlight.add(url);
-        var pre = new Image();
-        pre.onload = function () {
-            // decode() pre-warms the GPU texture so navigation is instant.
-            // Only used here (off-screen preload), never on the visible slot.
-            if (typeof pre.decode === "function") {
-                pre.decode()
-                    .catch(function () {})
-                    .finally(function () {
-                        preloadCache.set(url, pre);
-                        preloadInFlight.delete(url);
-                    });
-            } else {
-                preloadCache.set(url, pre);
-                preloadInFlight.delete(url);
-            }
-        };
-        pre.onerror = function () { preloadInFlight.delete(url); };
-        pre.src = url;
-    }
+    function fetchImg(url, onDone, onFail) {
+        // Cache hit: return immediately.
+        if (imgCache.has(url)) { onDone(imgCache.get(url)); return; }
 
-    function preloadAdjacent(index) {
-        if (IMAGES.length <= 1) return;
-        for (var d = 1; d <= 2; d++) {
-            preloadUrl(IMAGES[((index + d) % IMAGES.length + IMAGES.length) % IMAGES.length].full);
-            preloadUrl(IMAGES[((index - d) % IMAGES.length + IMAGES.length) % IMAGES.length].full);
-        }
-    }
-
-    // ── Slot loading ──────────────────────────────────────────────────────────
-    // Generation counter replaces the old loadingImg sentinel.
-    // Incremented every time the visible (centre) slot gets a new load request.
-    // Async callbacks check their captured generation and bail if stale.
-    var loadGeneration = 0;
-
-    function loadIntoSlot(slotEl, imgData, showSpinner) {
-        if (!imgData) return;
-
-        // ── Cache hit ─────────────────────────────────────────────────────────
-        if (preloadCache.has(imgData.full)) {
-            slotEl.src = preloadCache.get(imgData.full).src;
-            slotEl.alt = imgData.name;
-            if (showSpinner) {
-                lbImgCurr.classList.remove("fading");
-                lbSpinner.classList.remove("visible");
-            }
+        // In-flight: piggyback onto existing request.
+        if (imgFlight.has(url)) {
+            imgFlight.get(url).cbs.push({ onDone: onDone, onFail: onFail });
             return;
         }
 
-        if (showSpinner) {
-            // ── Visible (LCP) slot ────────────────────────────────────────────
-            // Set src directly on the real <img> element and let the browser's
-            // own rendering pipeline handle decode and paint.
-            // DO NOT use an off-screen Image() + decode() here — that adds
-            // explicit decode latency before first paint, which is what causes
-            // the "Element render delay" reported by Lighthouse.
-            var myGen = ++loadGeneration;
+        // New fetch.
+        var img   = new Image();
+        var entry = { img: img, cbs: [{ onDone: onDone, onFail: onFail }] };
+        imgFlight.set(url, entry);
 
-            lbImgCurr.classList.add("fading");
-            lbSpinner.classList.add("visible");
-            lbImgCurr.setAttribute("fetchpriority", "high");
+        img.onload = function () {
+            imgFlight.delete(url);
+            function settle() {
+                imgCache.set(url, img);
+                entry.cbs.forEach(function (cb) { cb.onDone(img); });
+            }
+            // decode() pre-warms the GPU texture so the image paints without
+            // a compositor stall. Must be after onload (iOS Safari fix).
+            if (typeof img.decode === "function") {
+                img.decode().catch(function () {}).finally(settle);
+            } else {
+                settle();
+            }
+        };
+        img.onerror = function () {
+            imgFlight.delete(url);
+            entry.cbs.forEach(function (cb) { cb.onFail(); });
+        };
+        img.src = url;
+    }
 
-            lbImgCurr.onload = function () {
-                if (myGen !== loadGeneration) return; // navigated away
-                preloadCache.set(imgData.full, lbImgCurr);
-                lbImgCurr.classList.remove("fading");
-                lbSpinner.classList.remove("visible");
-                lbImgCurr.onload  = null;
-                lbImgCurr.onerror = null;
-            };
-            lbImgCurr.onerror = function () {
-                if (myGen !== loadGeneration) return;
-                lbImgCurr.classList.remove("fading");
-                lbSpinner.classList.remove("visible");
-                lbImgCurr.onload  = null;
-                lbImgCurr.onerror = null;
-            };
+    // Warm the cache without updating any slot.
+    function prefetch(url) { fetchImg(url, function () {}, function () {}); }
 
-            lbImgCurr.src = imgData.full;
+    // Prefetch full-res for ±2 neighbors so rapid navigation is instant.
+    function preloadAdjacent(index) {
+        var n = IMAGES.length;
+        if (n <= 1) return;
+        for (var d = 1; d <= 2; d++) {
+            prefetch(IMAGES[((index + d) % n + n) % n].full);
+            prefetch(IMAGES[((index - d) % n + n) % n].full);
+        }
+    }
+
+    // ── Centre slot loading ───────────────────────────────────────────────────
+    //
+    // Shows the thumbnail immediately (usually a near-instant HTTP cache hit
+    // since the grid already loaded it), then upgrades to full-res when decoded.
+    // The spinner indicates the full-res is still loading.
+    //
+    // loadGen is incremented each time a new centre load starts; async
+    // callbacks check their captured generation and bail if superseded.
+    var loadGen = 0;
+
+    function loadCentre(imgData) {
+        var gen = ++loadGen;
+
+        // Full-res already decoded and cached: display immediately, no spinner.
+        if (imgCache.has(imgData.full)) {
+            lbImgCurr.src = imgCache.get(imgData.full).src;
             lbImgCurr.alt = imgData.name;
+            lbImgCurr.classList.remove("fading");
+            lbSpinner.classList.remove("visible");
+            return;
+        }
 
+        // Show thumbnail while full-res is fetching.
+        // Avoid a redundant assignment if the slot already shows our thumbnail
+        // (e.g. it just became centre from a side slot).
+        var thumbAbs = new URL(imgData.thumb, location.href).href;
+        if (lbImgCurr.src !== thumbAbs) {
+            lbImgCurr.src = imgData.thumb;
+            lbImgCurr.alt = imgData.name;
+        }
+        lbImgCurr.classList.remove("fading");
+        lbSpinner.classList.add("visible");
+
+        fetchImg(imgData.full,
+            function (imgEl) {
+                if (gen !== loadGen) return; // superseded
+                lbImgCurr.src = imgEl.src;
+                lbImgCurr.alt = imgData.name;
+                lbSpinner.classList.remove("visible");
+            },
+            function () {
+                if (gen !== loadGen) return;
+                lbSpinner.classList.remove("visible");
+            }
+        );
+    }
+
+    // ── Side slot loading ─────────────────────────────────────────────────────
+    //
+    // Side slots always show the thumbnail immediately (no wait, no spinner).
+    // genRef is a {v: Number} object — incrementing genRef.v cancels any
+    // pending upgrade for this slot.
+    //
+    // When SIDE_SLOT_THUMBS = true:
+    //   Only warms the full-res cache. Upgrade happens in loadCentre() when
+    //   the slot becomes active.
+    //
+    // When SIDE_SLOT_THUMBS = false:
+    //   Also upgrades the slot src to full-res when the fetch completes,
+    //   so swipe-to is instant with no upgrade delay.
+
+    var prevGen = { v: 0 };
+    var nextGen = { v: 0 };
+
+    function loadSide(slotEl, genRef, imgData) {
+        if (!imgData) { slotEl.src = ""; slotEl.alt = ""; return; }
+        var gen = ++genRef.v;
+
+        // Full-res already cached: show it directly (regardless of mode).
+        if (imgCache.has(imgData.full)) {
+            slotEl.src = imgCache.get(imgData.full).src;
+            slotEl.alt = imgData.name;
+            return;
+        }
+
+        // Show thumbnail immediately.
+        slotEl.src = imgData.thumb;
+        slotEl.alt = imgData.name;
+
+        if (SIDE_SLOT_THUMBS) {
+            // Warm-cache only. Do not update slot src — the thumb is sufficient
+            // for display and the full-res will be used by loadCentre() later.
+            prefetch(imgData.full);
         } else {
-            // ── Side / background slot ────────────────────────────────────────
-            // Off-screen Image() + onload → decode() so the bitmap is fully
-            // pre-warmed before the user swipes to it.
-            var newImg = new Image();
-            newImg.onload = function () {
-                if (typeof newImg.decode === "function") {
-                    newImg.decode()
-                        .catch(function () {})
-                        .finally(function () {
-                            preloadCache.set(imgData.full, newImg);
-                            // Only update the slot src if it's still waiting
-                            // (it may have been cleared by a reshuffle)
-                            if (!slotEl.src || slotEl.src === window.location.href) {
-                                slotEl.src = newImg.src;
-                                slotEl.alt = imgData.name;
-                            }
-                        });
-                } else {
-                    preloadCache.set(imgData.full, newImg);
-                    if (!slotEl.src || slotEl.src === window.location.href) {
-                        slotEl.src = newImg.src;
-                        slotEl.alt = imgData.name;
-                    }
-                }
-            };
-            newImg.onerror = function () {}; // silently ignore background failures
-            newImg.src = imgData.full;
+            // Upgrade slot to full-res when decoded.
+            var capturedEl  = slotEl;
+            var capturedRef = genRef;
+            var capturedGen = gen;
+            fetchImg(imgData.full,
+                function (imgEl) {
+                    if (capturedGen !== capturedRef.v) return; // slot was reassigned
+                    capturedEl.src = imgEl.src;
+                },
+                function () {}
+            );
         }
     }
 
     // Populate all three slots for a given centre index.
-    // Side slots are deferred by one rAF so the centre image gets
-    // first priority on network connections and decode resources.
+    // Side slots are deferred one rAF so centre gets first priority on
+    // network connections and decode resources.
     function loadAllSlots(index) {
         var n = IMAGES.length;
         lbName.textContent    = IMAGES[index].name;
         lbCounter.textContent = "(" + (index + 1) + "\u202f/\u202f" + n + ")";
 
-        loadIntoSlot(lbImgCurr, IMAGES[index], true);
+        loadCentre(IMAGES[index]);
 
         if (n > 1) {
             requestAnimationFrame(function () {
-                loadIntoSlot(lbImgPrev, IMAGES[(index - 1 + n) % n], false);
-                loadIntoSlot(lbImgNext, IMAGES[(index + 1) % n],     false);
+                loadSide(lbImgPrev, prevGen, IMAGES[(index - 1 + n) % n]);
+                loadSide(lbImgNext, nextGen, IMAGES[(index + 1) % n]);
             });
         }
     }
@@ -561,9 +568,9 @@
     }
 
     // ── Lightbox state ────────────────────────────────────────────────────────
-    let current = 0;
+    var current = 0;
 
-    function updateTopbarButtons(index) {
+    function updateTopbar(index) {
         var img = IMAGES[index];
         if (!img) return;
         lbDownload.href = img.full;
@@ -576,7 +583,7 @@
         document.body.style.overflow = "hidden";
         loadAllSlots(current);
         setHashForIndex(current);
-        updateTopbarButtons(current);
+        updateTopbar(current);
         preloadAdjacent(current);
     }
 
@@ -584,29 +591,22 @@
         lightbox.classList.remove("open");
         document.body.style.overflow = "";
         clearHash();
-        loadGeneration++; // cancel any in-flight centre-slot load
-        lbImgCurr.onload  = null;
-        lbImgCurr.onerror = null;
-        lbImgCurr.classList.remove("fading");
+        loadGen++; // cancel any in-flight centre-slot load
         lbSpinner.classList.remove("visible");
+        lbImgCurr.classList.remove("fading");
     }
 
-    // Non-swipe navigation (keyboard / arrow buttons): cross-fade the centre
-    // slot and update all three positions for the next swipe.
     function navigate(delta) {
         if (IMAGES.length === 0 || swipeAnimating) return;
         commitSwipe(delta);
     }
 
     // ── Open from hash on page load ───────────────────────────────────────────
-    // When a hash URL is used, open the lightbox immediately and defer
-    // building the grid — the user is looking at the lightbox, not the grid,
-    // and we don't want thumbnail fetches competing with the LCP image fetch.
     (function () {
         var i = indexFromHash();
         if (i >= 0) {
             openLightbox(i);
-            // Build grid lazily once the browser is idle
+            // Defer grid build so it doesn't compete with the LCP image fetch.
             if (typeof requestIdleCallback === "function") {
                 requestIdleCallback(function () { buildGrid(IMAGES); }, { timeout: 2000 });
             } else {
@@ -617,29 +617,30 @@
         }
     }());
 
-    // ── Handle browser back/forward ───────────────────────────────────────────
+    // ── Browser back/forward ──────────────────────────────────────────────────
     window.addEventListener("hashchange", function () {
         var i = indexFromHash();
         if (i >= 0) {
-            if (!lightbox.classList.contains("open")) { openLightbox(i); }
-            else { current = i; loadAllSlots(i); updateTopbarButtons(i); preloadAdjacent(i); }
-        } else {
-            if (lightbox.classList.contains("open")) {
-                lightbox.classList.remove("open");
-                document.body.style.overflow = "";
-                loadGeneration++;
-                lbImgCurr.onload  = null;
-                lbImgCurr.onerror = null;
+            if (!lightbox.classList.contains("open")) {
+                openLightbox(i);
+            } else {
+                current = i;
+                loadAllSlots(i);
+                updateTopbar(i);
+                preloadAdjacent(i);
             }
+        } else if (lightbox.classList.contains("open")) {
+            lightbox.classList.remove("open");
+            document.body.style.overflow = "";
+            loadGen++;
         }
     });
 
-    // ── Controls ──────────────────────────────────────────────────────────────
+    // ── Button controls ───────────────────────────────────────────────────────
     document.getElementById("lb-prev").addEventListener("mousedown", function () { navigate(-1); });
     document.getElementById("lb-next").addEventListener("mousedown", function () { navigate(1); });
     document.getElementById("lb-close").addEventListener("mousedown", closeLightbox);
 
-    // Close on backdrop click (anything that isn't a slide image or UI element).
     lightbox.addEventListener("mousedown", function (e) {
         var t = e.target;
         if (t === lightbox || t.id === "lb-stage" || t.id === "lb-track" || t.classList.contains("lb-slide")) {
@@ -650,85 +651,66 @@
     // ── Keyboard ──────────────────────────────────────────────────────────────
     document.addEventListener("keydown", function (e) {
         if (!lightbox.classList.contains("open")) return;
-        if (e.key === "Escape")                                   { closeLightbox(); return; }
+        if (e.key === "Escape")                                   closeLightbox();
         if (e.key === "ArrowLeft"  || e.key === "h" || e.key === "a") navigate(-1);
         if (e.key === "ArrowRight" || e.key === "l" || e.key === "d") navigate(1);
     });
 
     // ── Touch / swipe ─────────────────────────────────────────────────────────
-    // The track holds [prev][curr][next] side-by-side. Dragging it moves all
-    // three simultaneously so the arriving image is visibly sliding in.
-    // On a committed swipe we animate to the arriving slot, then instantly
-    // reshuffle the DOM (no network hit) and snap back to centre.
-    var touchStartX   = 0, touchStartY = 0, touchStartTime = 0;
+    var touchStartX = 0, touchStartY = 0, touchStartTime = 0;
     var dragActive    = false;
-    var swipeAnimating = false;          // block new swipes during settle animation
-    var SWIPE_MIN_DIST  = 40;            // px
-    var SWIPE_MIN_VEL   = 0.3;           // px/ms
+    var swipeAnimating = false;
+    var SWIPE_MIN_DIST  = 40;   // px
+    var SWIPE_MIN_VEL   = 0.3;  // px/ms
     var SWIPE_AXIS_LOCK = 1.5;
     var ANIM_MS         = 280;
 
-    // Base translateX of the track is -33.333% (centres the middle slot).
-    // During a drag we apply an additional pixel offset on top of that.
     function setTrackX(extraPx) {
-        if (extraPx === 0) {
-            lbTrack.style.transform = "translateX(-33.333%)";
-        } else {
-            lbTrack.style.transform = "translateX(calc(-33.333% + " + extraPx + "px))";
-        }
+        lbTrack.style.transform = extraPx === 0
+            ? "translateX(-33.333%)"
+            : "translateX(calc(-33.333% + " + extraPx + "px))";
     }
 
     lightbox.addEventListener("touchstart", function (e) {
-        if (swipeAnimating) return;
-        if (e.touches.length !== 1) return;
+        if (swipeAnimating || e.touches.length !== 1) return;
         if (e.target.closest("#lb-topbar") || e.target.closest("#lb-caption") || e.target.closest("#lb-fullscreen")) return;
         touchStartX    = e.touches[0].clientX;
         touchStartY    = e.touches[0].clientY;
         touchStartTime = Date.now();
         dragActive     = true;
-        lbTrack.style.transition = "none";
+        lbTrack.style.willChange  = "transform";
+        lbTrack.style.transition  = "none";
     }, { passive: true });
 
     lightbox.addEventListener("touchmove", function (e) {
         if (!dragActive || e.touches.length !== 1) return;
         var dx = e.touches[0].clientX - touchStartX;
         var dy = e.touches[0].clientY - touchStartY;
-
-        // Abort drag if gesture is primarily vertical.
         if (Math.abs(dy) > Math.abs(dx) * SWIPE_AXIS_LOCK && Math.abs(dy) > 10) {
             dragActive = false;
+            lbTrack.style.willChange = "";
             lbTrack.style.transition = "";
             setTrackX(0);
             return;
         }
-
-        // At ±1 image the edges are already in frame; beyond that add rubber-band
-        // resistance so it feels like there's nothing further to reveal.
-        var n = IMAGES.length;
-        if (n <= 1) return; // nothing to swipe to
-        setTrackX(dx);
+        if (IMAGES.length > 1) setTrackX(dx);
     }, { passive: true });
 
     lightbox.addEventListener("touchend", function (e) {
         if (!dragActive) return;
         dragActive = false;
-
         var dx      = e.changedTouches[0].clientX - touchStartX;
         var dy      = e.changedTouches[0].clientY - touchStartY;
         var elapsed = Date.now() - touchStartTime;
         var vel     = Math.abs(dx) / elapsed;
-
         var isHoriz = Math.abs(dx) > Math.abs(dy) * SWIPE_AXIS_LOCK;
         var isSwipe = isHoriz && (Math.abs(dx) > SWIPE_MIN_DIST || vel > SWIPE_MIN_VEL);
-
         if (isSwipe && IMAGES.length > 1) {
-            var direction = dx < 0 ? 1 : -1; // negative dx = swiped left = next
-            commitSwipe(direction);
+            commitSwipe(dx < 0 ? 1 : -1);
         } else {
-            // Snap back.
             lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
             setTrackX(0);
-            setTimeout(function () { lbTrack.style.transition = ""; }, ANIM_MS + 10);
+            setTimeout(function () { lbTrack.style.transition = ""; lbTrack.style.willChange = ""; }, ANIM_MS + 10);
         }
     }, { passive: true });
 
@@ -737,80 +719,72 @@
         dragActive = false;
         lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
         setTrackX(0);
-        setTimeout(function () { lbTrack.style.transition = ""; }, ANIM_MS + 10);
+        setTimeout(function () { lbTrack.style.transition = ""; lbTrack.style.willChange = ""; }, ANIM_MS + 10);
     }, { passive: true });
 
+    // ── Swipe commit ──────────────────────────────────────────────────────────
+    //
+    // Animates the track to the arriving slot, then reshuffles the three img
+    // srcs so we can snap back to the centre without any network hit.
+    // After the reshuffle:
+    //   • loadCentre() upgrades the new centre slot to full-res (instant if
+    //     preloading worked; otherwise shows thumb with spinner).
+    //   • loadSide() populates the newly vacated far slot.
     function commitSwipe(direction) {
-        // direction: +1 = going to next (swipe left), -1 = going to prev (swipe right)
         swipeAnimating = true;
         var n = IMAGES.length;
 
-        // Animate to the arriving slot.
-        // direction=+1 → slide track left so the right slot (next) fills the view.
-        // direction=-1 → slide track right so the left slot (prev) fills the view.
-        var targetX = direction > 0 ? "-66.666%" : "0%";
+        lbTrack.style.willChange = "transform";
         lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
-        lbTrack.style.transform  = "translateX(" + targetX + ")";
+        lbTrack.style.transform  = direction > 0 ? "translateX(-66.666%)" : "translateX(0%)";
 
         setTimeout(function () {
-            // Update current index.
             current = ((current + direction) % n + n) % n;
-
-            // ── DOM reshuffle ─────────────────────────────────────────────────
-            // The arriving slot already shows the correct image (populated by
-            // loadAllSlots when the lightbox opened / last navigation ran).
-            // Swap src references between slots, but do NOT start loading the
-            // vacated far slot here — that happens below in requestIdleCallback
-            // so it doesn't compete with the post-animation repaint.
             lbTrack.style.transition = "none";
 
-            // Capture which slot needs filling and which image goes there,
-            // before we modify the srcs.
-            var slotToFill, imgToLoad;
+            // Reshuffle slot srcs. The arriving slot src (thumb or full-res)
+            // becomes the new centre src; the vacated slot is cleared.
             if (direction > 0) {
-                // Moved to next: arriving slot was lbImgNext.
-                slotToFill = lbImgNext;
-                imgToLoad  = IMAGES[(current + 1) % n];
                 lbImgPrev.src = lbImgCurr.src;  lbImgPrev.alt = lbImgCurr.alt;
                 lbImgCurr.src = lbImgNext.src;  lbImgCurr.alt = lbImgNext.alt;
                 lbImgNext.src = "";              lbImgNext.alt = "";
             } else {
-                // Moved to prev: arriving slot was lbImgPrev.
-                slotToFill = lbImgPrev;
-                imgToLoad  = IMAGES[(current - 1 + n) % n];
                 lbImgNext.src = lbImgCurr.src;  lbImgNext.alt = lbImgCurr.alt;
                 lbImgCurr.src = lbImgPrev.src;  lbImgCurr.alt = lbImgPrev.alt;
                 lbImgPrev.src = "";              lbImgPrev.alt = "";
             }
 
-            // Reset track to centre without a visible jump.
             setTrackX(0);
 
-            // Update caption, hash, topbar.
             lbName.textContent    = IMAGES[current].name;
             lbCounter.textContent = "(" + (current + 1) + "\u202f/\u202f" + n + ")";
             setHashForIndex(current);
-            updateTopbarButtons(current);
+            updateTopbar(current);
 
-            // Re-enable transition one frame later so the snap isn't animated.
+            // Upgrade the new centre slot to full-res.
+            // This is usually instant when preloading has run ahead.
+            loadCentre(IMAGES[current]);
+
             requestAnimationFrame(function () {
                 lbTrack.style.transition = "";
+                lbTrack.style.willChange = "";
                 swipeAnimating = false;
             });
 
-            // ── Deferred background work ──────────────────────────────────────
-            // Load the vacated far slot and kick off ±2 preloads only when the
-            // browser is idle. This keeps the post-animation repaint smooth
-            // even when the target image hasn't been fetched yet.
-            var idleWork = function () {
-                loadIntoSlot(slotToFill, imgToLoad, false);
+            // Load the newly vacated far slot and extend the preload window,
+            // deferred until idle to avoid competing with the repaint.
+            var farSlotEl  = direction > 0 ? lbImgNext : lbImgPrev;
+            var farSlotGen = direction > 0 ? nextGen   : prevGen;
+            var farIdx     = direction > 0 ? (current + 1) % n : (current - 1 + n) % n;
+
+            var doIdle = function () {
+                loadSide(farSlotEl, farSlotGen, IMAGES[farIdx]);
                 preloadAdjacent(current);
             };
             if (typeof requestIdleCallback === "function") {
-                requestIdleCallback(idleWork, { timeout: 500 });
+                requestIdleCallback(doIdle, { timeout: 500 });
             } else {
-                // Safari <16 / older browsers: small delay is enough.
-                setTimeout(idleWork, 100);
+                setTimeout(doIdle, 100);
             }
         }, ANIM_MS + 10);
     }
@@ -821,7 +795,6 @@
         var iconEnter = document.getElementById("lb-fs-enter");
         var iconExit  = document.getElementById("lb-fs-exit");
 
-        // Hide the button entirely on browsers without Fullscreen API (iOS Safari).
         if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) {
             btn.classList.add("unsupported");
             return;
@@ -830,24 +803,45 @@
         btn.addEventListener("mousedown", function (e) {
             e.stopPropagation();
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                var el = lightbox;
-                if (el.requestFullscreen)       el.requestFullscreen();
-                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                if (lightbox.requestFullscreen)            lightbox.requestFullscreen();
+                else if (lightbox.webkitRequestFullscreen) lightbox.webkitRequestFullscreen();
             } else {
-                if (document.exitFullscreen)        document.exitFullscreen();
-                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                if (document.exitFullscreen)              document.exitFullscreen();
+                else if (document.webkitExitFullscreen)   document.webkitExitFullscreen();
             }
         });
 
         function onFsChange() {
             var active = !!(document.fullscreenElement || document.webkitFullscreenElement);
-            iconEnter.style.display = active ? "none"  : "";
-            iconExit.style.display  = active ? ""      : "none";
+            iconEnter.style.display = active ? "none" : "";
+            iconExit.style.display  = active ? ""     : "none";
             btn.setAttribute("aria-label", active ? "Exit fullscreen" : "Toggle fullscreen");
         }
         document.addEventListener("fullscreenchange",       onFsChange);
         document.addEventListener("webkitfullscreenchange", onFsChange);
     }());
+
+    // ── Share / copy helpers ──────────────────────────────────────────────────
+    function copyToClipboard(text, onSuccess) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(onSuccess).catch(function () {
+                fallbackCopy(text, onSuccess);
+            });
+        } else {
+            fallbackCopy(text, onSuccess);
+        }
+    }
+    function fallbackCopy(text, onSuccess) {
+        try {
+            var tmp = document.createElement("input");
+            tmp.value = text;
+            document.body.appendChild(tmp);
+            tmp.select();
+            document.execCommand("copy");
+            document.body.removeChild(tmp);
+            onSuccess();
+        } catch (e) {}
+    }
 
     // ── Share button ──────────────────────────────────────────────────────────
     lbShare.addEventListener("mousedown", function (e) {
@@ -859,60 +853,47 @@
             navigator.share({ title: img.name, url: url }).catch(function () {});
             return;
         }
-        function flash() {
+        copyToClipboard(url, function () {
             lbShare.classList.add("active");
             setTimeout(function () { lbShare.classList.remove("active"); }, 1800);
-        }
-        navigator.clipboard.writeText(url).then(flash).catch(function () {
-            var tmp = document.createElement("input");
-            tmp.value = url; document.body.appendChild(tmp); tmp.select();
-            document.execCommand("copy"); document.body.removeChild(tmp);
-            flash();
         });
     });
 
+    // ── Download button ───────────────────────────────────────────────────────
     lbDownload.addEventListener("mousedown", function (e) { e.stopPropagation(); });
 
     // ── Copy-link button ──────────────────────────────────────────────────────
-    (function () {
-        var btn = document.getElementById("lb-copy");
-        btn.addEventListener("mousedown", function (e) {
-            e.stopPropagation();
-            var url = location.href;
-            navigator.clipboard.writeText(url).then(function () {
-                btn.classList.add("copied");
-                setTimeout(function () { btn.classList.remove("copied"); }, 1800);
-            }).catch(function () {
-                var tmp = document.createElement("input");
-                tmp.value = url; document.body.appendChild(tmp); tmp.select();
-                document.execCommand("copy"); document.body.removeChild(tmp);
-                btn.classList.add("copied");
-                setTimeout(function () { btn.classList.remove("copied"); }, 1800);
-            });
+    document.getElementById("lb-copy").addEventListener("mousedown", function (e) {
+        e.stopPropagation();
+        var btn = this;
+        copyToClipboard(location.href, function () {
+            btn.classList.add("copied");
+            setTimeout(function () { btn.classList.remove("copied"); }, 1800);
         });
-    }());
+    });
 
     // ── Hot-reload polling ────────────────────────────────────────────────────
-    (function startPolling() {
+    // Polls the page every 10 s and rebuilds the grid if the image count changed.
+    (function () {
         var INTERVAL = 10000;
         function poll() {
             fetch(location.href, { cache: "no-store" })
                 .then(function (r) { return r.text(); })
                 .then(function (html) {
-                    var match = html.match(/let IMAGES = (\[[\s\S]*?\]);/);
+                    var match = html.match(/var IMAGES = (\[[\s\S]*?\]);/);
                     if (!match) return;
                     var fresh;
                     try { fresh = JSON.parse(match[1]); } catch (e) { return; }
                     if (fresh.length === IMAGES.length) return;
-                    var added = fresh.length - IMAGES.length;
-                    var message = added > 0
-                        ? "+" + added + " new photo" + (added === 1 ? "" : "s")
-                        : Math.abs(added) + " photo" + (Math.abs(added) === 1 ? "" : "s") + " removed";
+                    var delta = fresh.length - IMAGES.length;
+                    var msg = delta > 0
+                        ? "+" + delta + " new photo" + (delta === 1 ? "" : "s")
+                        : Math.abs(delta) + " photo" + (Math.abs(delta) === 1 ? "" : "s") + " removed";
                     IMAGES = fresh;
                     buildGrid(IMAGES);
                     countEl.textContent = fresh.length + " photo" + (fresh.length === 1 ? "" : "s");
                     if (lightbox.classList.contains("open") && current >= IMAGES.length) closeLightbox();
-                    reloadToast.textContent = message;
+                    reloadToast.textContent = msg;
                     reloadToast.classList.add("show");
                     setTimeout(function () { reloadToast.classList.remove("show"); }, 3000);
                 })
