@@ -314,13 +314,15 @@
     // ── Config ────────────────────────────────────────────────────────────────
     //
     // SIDE_SLOT_THUMBS
-    //   true  → side slots (prev/next) display the thumbnail immediately.
-    //            Full-res is fetched in the background and swaps in when this
-    //            slot becomes the active centre slot.
-    //            Lower bandwidth: full-res only loaded for images actually viewed.
-    //   false → side slots load and display full-res immediately.
-    //            Smoother swipe (no upgrade step), at the cost of fetching
-    //            full-res images the user may not end up viewing.
+    //   true  → Only one full-res image is ever in-flight at a time: the
+    //            centre slot. Side slots show the thumbnail immediately and
+    //            nothing else — no background full-res fetches, no preloading.
+    //            Full-res for the next image loads only after you navigate to it.
+    //            Best for metered connections or large image files.
+    //
+    //   false → Side slots load full-res eagerly in the background so swipe-to
+    //            is instant with no spinner. Uses more bandwidth since full-res
+    //            is fetched for images you may not end up viewing.
     var SIDE_SLOT_THUMBS = true;
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
@@ -428,7 +430,10 @@
     function prefetch(url) { fetchImg(url, function () {}, function () {}); }
 
     // Prefetch full-res for ±2 neighbors so rapid navigation is instant.
+    // When SIDE_SLOT_THUMBS is on, full-res is only ever loaded for the
+    // centre slot, so we skip prefetching here entirely.
     function preloadAdjacent(index) {
+        if (SIDE_SLOT_THUMBS) return;
         var n = IMAGES.length;
         if (n <= 1) return;
         for (var d = 1; d <= 2; d++) {
@@ -491,8 +496,9 @@
     // pending upgrade for this slot.
     //
     // When SIDE_SLOT_THUMBS = true:
-    //   Only warms the full-res cache. Upgrade happens in loadCentre() when
-    //   the slot becomes active.
+    //   Shows thumbnail only. No full-res fetch of any kind — not even a
+    //   background warm. Full-res is requested by loadCentre() only after
+    //   the user navigates to this slot.
     //
     // When SIDE_SLOT_THUMBS = false:
     //   Also upgrades the slot src to full-res when the fetch completes,
@@ -517,9 +523,9 @@
         slotEl.alt = imgData.name;
 
         if (SIDE_SLOT_THUMBS) {
-            // Warm-cache only. Do not update slot src — the thumb is sufficient
-            // for display and the full-res will be used by loadCentre() later.
-            prefetch(imgData.full);
+            // Thumb-only mode: show the thumbnail and do nothing else.
+            // Full-res will be fetched by loadCentre() only when this slot
+            // becomes the active centre — no background full-res fetches.
         } else {
             // Upgrade slot to full-res when decoded.
             var capturedEl  = slotEl;
