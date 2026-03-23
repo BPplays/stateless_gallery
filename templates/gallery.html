@@ -416,14 +416,23 @@
 
     function preloadUrl(url) {
         if (preloadCache.has(url) || preloadInFlight.has(url)) return;
+
         preloadInFlight.add(url);
+
         var pre = new Image();
+
         pre.onload = function () {
-            // decode() pre-warms the GPU texture so navigation is instant.
-            // Only used here (off-screen preload), never on the visible slot.
+            // // Reject broken/partial images
+            // if (!pre.complete || pre.naturalWidth === 0) {
+            //     preloadInFlight.delete(url);
+            //     return;
+            // }
+
             if (typeof pre.decode === "function") {
                 pre.decode()
-                    .catch(function () {})
+                    .catch(function () {
+                        console.log("decode failed")
+                    })
                     .finally(function () {
                         preloadCache.set(url, pre);
                         preloadInFlight.delete(url);
@@ -433,13 +442,17 @@
                 preloadInFlight.delete(url);
             }
         };
-        pre.onerror = function () { preloadInFlight.delete(url); };
+
+        pre.onerror = function () {
+            preloadInFlight.delete(url);
+        };
+
         pre.src = url;
     }
 
     function preloadAdjacent(index) {
         if (IMAGES.length <= 1) return;
-        for (var d = 1; d <= 2; d++) {
+        for (var d = 1; d <= 1; d++) {
             preloadUrl(IMAGES[((index + d) % IMAGES.length + IMAGES.length) % IMAGES.length].full);
             preloadUrl(IMAGES[((index - d) % IMAGES.length + IMAGES.length) % IMAGES.length].full);
         }
@@ -503,6 +516,7 @@
             // pre-warmed before the user swipes to it.
             var newImg = new Image();
             newImg.onload = function () {
+                // if (!newImg.complete || newImg.naturalWidth === 0) return;
                 if (typeof newImg.decode === "function") {
                     newImg.decode()
                         .catch(function () {})
@@ -622,7 +636,12 @@
         var i = indexFromHash();
         if (i >= 0) {
             if (!lightbox.classList.contains("open")) { openLightbox(i); }
-            else { current = i; loadAllSlots(i); updateTopbarButtons(i); preloadAdjacent(i); }
+            else {
+                current = i;
+                loadAllSlots(i);
+                updateTopbarButtons(i);
+                preloadAdjacent(i);
+            }
         } else {
             if (lightbox.classList.contains("open")) {
                 lightbox.classList.remove("open");
