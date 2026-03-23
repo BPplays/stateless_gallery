@@ -827,8 +827,8 @@
             return;
         }
 
-        btn.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-        btn.addEventListener("mousedown", function () {
+        btn.addEventListener("mousedown", function (e) {
+            e.stopPropagation();
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 var el = lightbox;
                 if (el.requestFullscreen)       el.requestFullscreen();
@@ -850,8 +850,8 @@
     }());
 
     // ── Share button ──────────────────────────────────────────────────────────
-    lbShare.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-    lbShare.addEventListener("mousedown", function () {
+    lbShare.addEventListener("mousedown", function (e) {
+        e.stopPropagation();
         var img = IMAGES[current];
         if (!img) return;
         var url = location.href;
@@ -876,8 +876,8 @@
     // ── Copy-link button ──────────────────────────────────────────────────────
     (function () {
         var btn = document.getElementById("lb-copy");
-        btn.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-        btn.addEventListener("mousedown", function () {
+        btn.addEventListener("mousedown", function (e) {
+            e.stopPropagation();
             var url = location.href;
             navigator.clipboard.writeText(url).then(function () {
                 btn.classList.add("copied");
