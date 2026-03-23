@@ -162,13 +162,13 @@
             display: flex;
             width: 300%;
             height: 100%;
-            transform: translateX(-33.33333333333333%);
+            transform: translateX(-33.333%);
             will-change: transform;
         }
 
         .lb-slide {
             /* Each slot = 1/3 of 300% track = 100% of stage */
-            width: 33.33333333333333%;
+            width: 33.333%;
             height: 100%;
             display: flex;
             align-items: center;
@@ -416,23 +416,14 @@
 
     function preloadUrl(url) {
         if (preloadCache.has(url) || preloadInFlight.has(url)) return;
-
         preloadInFlight.add(url);
-
         var pre = new Image();
-
         pre.onload = function () {
-            // // Reject broken/partial images
-            // if (!pre.complete || pre.naturalWidth === 0) {
-            //     preloadInFlight.delete(url);
-            //     return;
-            // }
-
+            // decode() pre-warms the GPU texture so navigation is instant.
+            // Only used here (off-screen preload), never on the visible slot.
             if (typeof pre.decode === "function") {
                 pre.decode()
-                    .catch(function () {
-                        console.log("decode failed")
-                    })
+                    .catch(function () {})
                     .finally(function () {
                         preloadCache.set(url, pre);
                         preloadInFlight.delete(url);
@@ -442,17 +433,13 @@
                 preloadInFlight.delete(url);
             }
         };
-
-        pre.onerror = function () {
-            preloadInFlight.delete(url);
-        };
-
+        pre.onerror = function () { preloadInFlight.delete(url); };
         pre.src = url;
     }
 
     function preloadAdjacent(index) {
         if (IMAGES.length <= 1) return;
-        for (var d = 1; d <= 1; d++) {
+        for (var d = 1; d <= 2; d++) {
             preloadUrl(IMAGES[((index + d) % IMAGES.length + IMAGES.length) % IMAGES.length].full);
             preloadUrl(IMAGES[((index - d) % IMAGES.length + IMAGES.length) % IMAGES.length].full);
         }
@@ -464,15 +451,11 @@
     // Async callbacks check their captured generation and bail if stale.
     var loadGeneration = 0;
 
-    function loadIntoSlot(slotEl, imgData, showSpinner, epoch) {
+    function loadIntoSlot(slotEl, imgData, showSpinner) {
         if (!imgData) return;
 
-        // Mark what this slot is *supposed* to show right now.
-        slotEl.dataset.url = imgData.full;
-
-        // Cache hit.
+        // ── Cache hit ─────────────────────────────────────────────────────────
         if (preloadCache.has(imgData.full)) {
-            if (epoch !== slotEpoch || slotEl.dataset.url !== imgData.full) return;
             slotEl.src = preloadCache.get(imgData.full).src;
             slotEl.alt = imgData.name;
             if (showSpinner) {
@@ -483,61 +466,66 @@
         }
 
         if (showSpinner) {
-            var myGen = ++slotEpoch;
+            // ── Visible (LCP) slot ────────────────────────────────────────────
+            // Set src directly on the real <img> element and let the browser's
+            // own rendering pipeline handle decode and paint.
+            // DO NOT use an off-screen Image() + decode() here — that adds
+            // explicit decode latency before first paint, which is what causes
+            // the "Element render delay" reported by Lighthouse.
+            var myGen = ++loadGeneration;
 
             lbImgCurr.classList.add("fading");
             lbSpinner.classList.add("visible");
             lbImgCurr.setAttribute("fetchpriority", "high");
 
             lbImgCurr.onload = function () {
-                if (myGen !== slotEpoch) return;
+                if (myGen !== loadGeneration) return; // navigated away
                 preloadCache.set(imgData.full, lbImgCurr);
                 lbImgCurr.classList.remove("fading");
                 lbSpinner.classList.remove("visible");
-                lbImgCurr.onload = null;
+                lbImgCurr.onload  = null;
                 lbImgCurr.onerror = null;
             };
-
             lbImgCurr.onerror = function () {
-                if (myGen !== slotEpoch) return;
+                if (myGen !== loadGeneration) return;
                 lbImgCurr.classList.remove("fading");
                 lbSpinner.classList.remove("visible");
-                lbImgCurr.onload = null;
+                lbImgCurr.onload  = null;
                 lbImgCurr.onerror = null;
             };
 
             lbImgCurr.src = imgData.full;
             lbImgCurr.alt = imgData.name;
-            return;
-        }
 
-        // Background slot load.
-        var myUrl = imgData.full;
-        var newImg = new Image();
-
-        newImg.onload = function () {
-            if (epoch !== slotEpoch) return;
-            if (slotEl.dataset.url !== myUrl) return;
-
-            if (typeof newImg.decode === "function") {
-                newImg.decode()
-                    .catch(function () {})
-                    .finally(function () {
-                        if (epoch !== slotEpoch) return;
-                        if (slotEl.dataset.url !== myUrl) return;
-                        preloadCache.set(myUrl, newImg);
+        } else {
+            // ── Side / background slot ────────────────────────────────────────
+            // Off-screen Image() + onload → decode() so the bitmap is fully
+            // pre-warmed before the user swipes to it.
+            var newImg = new Image();
+            newImg.onload = function () {
+                if (typeof newImg.decode === "function") {
+                    newImg.decode()
+                        .catch(function () {})
+                        .finally(function () {
+                            preloadCache.set(imgData.full, newImg);
+                            // Only update the slot src if it's still waiting
+                            // (it may have been cleared by a reshuffle)
+                            if (!slotEl.src || slotEl.src === window.location.href) {
+                                slotEl.src = newImg.src;
+                                slotEl.alt = imgData.name;
+                            }
+                        });
+                } else {
+                    preloadCache.set(imgData.full, newImg);
+                    if (!slotEl.src || slotEl.src === window.location.href) {
                         slotEl.src = newImg.src;
                         slotEl.alt = imgData.name;
-                    });
-            } else {
-                preloadCache.set(myUrl, newImg);
-                slotEl.src = newImg.src;
-                slotEl.alt = imgData.name;
-            }
-        };
-
-        newImg.onerror = function () {};
-        newImg.src = myUrl;
+                    }
+                }
+            };
+            newImg.onerror = function () {}; // silently ignore background failures
+            newImg.src = imgData.full;
+        }
     }
 
     // Populate all three slots for a given centre index.
@@ -545,18 +533,15 @@
     // first priority on network connections and decode resources.
     function loadAllSlots(index) {
         var n = IMAGES.length;
-        var epoch = bumpEpoch();
-
         lbName.textContent    = IMAGES[index].name;
         lbCounter.textContent = "(" + (index + 1) + "\u202f/\u202f" + n + ")";
 
-        loadIntoSlot(lbImgCurr, IMAGES[index], true, epoch);
+        loadIntoSlot(lbImgCurr, IMAGES[index], true);
 
         if (n > 1) {
-            pendingRAF = requestAnimationFrame(function () {
-                if (epoch !== slotEpoch) return;
-                loadIntoSlot(lbImgPrev, IMAGES[(index - 1 + n) % n], false, epoch);
-                loadIntoSlot(lbImgNext, IMAGES[(index + 1) % n],     false, epoch);
+            requestAnimationFrame(function () {
+                loadIntoSlot(lbImgPrev, IMAGES[(index - 1 + n) % n], false);
+                loadIntoSlot(lbImgNext, IMAGES[(index + 1) % n],     false);
             });
         }
     }
@@ -587,7 +572,6 @@
 
     function openLightbox(index) {
         current = index;
-        cancelPendingWork();
         lightbox.classList.add("open");
         document.body.style.overflow = "hidden";
         loadAllSlots(current);
@@ -600,9 +584,8 @@
         lightbox.classList.remove("open");
         document.body.style.overflow = "";
         clearHash();
-        cancelPendingWork();
-        bumpEpoch(); // invalidate anything still in flight
-        lbImgCurr.onload = null;
+        loadGeneration++; // cancel any in-flight centre-slot load
+        lbImgCurr.onload  = null;
         lbImgCurr.onerror = null;
         lbImgCurr.classList.remove("fading");
         lbSpinner.classList.remove("visible");
@@ -639,12 +622,7 @@
         var i = indexFromHash();
         if (i >= 0) {
             if (!lightbox.classList.contains("open")) { openLightbox(i); }
-            else {
-                current = i;
-                loadAllSlots(i);
-                updateTopbarButtons(i);
-                preloadAdjacent(i);
-            }
+            else { current = i; loadAllSlots(i); updateTopbarButtons(i); preloadAdjacent(i); }
         } else {
             if (lightbox.classList.contains("open")) {
                 lightbox.classList.remove("open");
@@ -690,33 +668,13 @@
     var SWIPE_AXIS_LOCK = 1.5;
     var ANIM_MS         = 280;
 
-    var slotEpoch = 0;
-    var pendingRAF = 0;
-    var pendingIdle = 0;
-
-    function bumpEpoch() {
-        slotEpoch++;
-        return slotEpoch;
-    }
-
-    function cancelPendingWork() {
-        if (pendingRAF) {
-            cancelAnimationFrame(pendingRAF);
-            pendingRAF = 0;
-        }
-        if (pendingIdle && typeof cancelIdleCallback === "function") {
-            cancelIdleCallback(pendingIdle);
-            pendingIdle = 0;
-        }
-    }
-
     // Base translateX of the track is -33.333% (centres the middle slot).
     // During a drag we apply an additional pixel offset on top of that.
     function setTrackX(extraPx) {
         if (extraPx === 0) {
-            lbTrack.style.transform = "translateX(-33.33333333333333%)";
+            lbTrack.style.transform = "translateX(-33.333%)";
         } else {
-            lbTrack.style.transform = "translateX(calc(-33.33333333333333% + " + extraPx + "px))";
+            lbTrack.style.transform = "translateX(calc(-33.333% + " + extraPx + "px))";
         }
     }
 
@@ -783,13 +741,6 @@
     }, { passive: true });
 
     function commitSwipe(direction) {
-
-        if (swipeAnimating) return;
-        swipeAnimating = true;
-
-        var epoch = bumpEpoch();
-        cancelPendingWork();
-
         // direction: +1 = going to next (swipe left), -1 = going to prev (swipe right)
         swipeAnimating = true;
         var n = IMAGES.length;
@@ -862,17 +813,6 @@
                 setTimeout(idleWork, 100);
             }
         }, ANIM_MS + 10);
-        var idleWork = function () {
-            if (epoch !== slotEpoch) return;
-            loadIntoSlot(slotToFill, imgToLoad, false, epoch);
-            preloadAdjacent(current);
-        };
-
-        if (typeof requestIdleCallback === "function") {
-            pendingIdle = requestIdleCallback(idleWork, { timeout: 500 });
-        } else {
-            pendingIdle = setTimeout(idleWork, 100);
-        }
     }
 
     // ── Fullscreen ────────────────────────────────────────────────────────────
