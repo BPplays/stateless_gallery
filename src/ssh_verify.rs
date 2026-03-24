@@ -204,9 +204,15 @@ async fn check_github_api(key_bytes: &[u8], pat: Option<String>) -> anyhow::Resu
 		.timeout(std::time::Duration::from_secs(8))
 		.build()?;
 
-	let resp: serde_json::Value = client
-		.get("https://api.github.com/meta")
-		.header("Authorization", format!("token {}", pat.unwrap_or("".to_string())))
+	let mut req = client
+		.get("https://api.github.com/meta");
+
+	if let Some(pat) = pat.clone().as_deref() {
+		req = req.header("Authorization", format!("token {}", pat))
+	}
+
+
+	let resp: serde_json::Value = req
 		.header("accept", "application/vnd.github+json")
 		.send().await?
 		.json().await?;
