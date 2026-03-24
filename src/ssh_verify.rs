@@ -192,7 +192,7 @@ async fn platform_api_verify(host: &str, key_bytes: &[u8]) -> Option<bool> {
 
 /// GitHub: GET https://api.github.com/meta → { ssh_keys: ["AAAA…", …] }
 async fn check_github_api(key_bytes: &[u8]) -> anyhow::Result<bool> {
-	println!("trying github api");
+	tracing::info!("trying github api");
 
 	let client = reqwest::Client::builder()
 		.user_agent("stateless-gallery/1.0 ssh-key-verify")
@@ -456,7 +456,7 @@ pub fn key_type_str(key_type: SshHostKeyType) -> Option<&'static str> {
 		SshHostKeyType::Dss              => Some("ssh-dss"),
 		SshHostKeyType::Ecdsa256 => Some("ecdsa-sha2-nistp256"),
 		SshHostKeyType::Ecdsa384 => Some("ecdsa-sha2-nistp384"),
-		SshHostKeyType::Ecdsa384 => Some("ecdsa-sha2-nistp521"),
+		SshHostKeyType::Ecdsa521 => Some("ecdsa-sha2-nistp521"),
 		SshHostKeyType::Ed255219          => Some("ssh-ed25519"),
 		_                             => None,
 	}
