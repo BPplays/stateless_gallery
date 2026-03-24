@@ -67,7 +67,9 @@ async fn git_sync(dir: &Path, force: bool, ssh_key: Option<&Path>) -> bool {
 
 fn git_sync_blocking(dir: &Path, force: bool, ssh_key: Option<&Path>) -> bool {
     // ── Open repository ───────────────────────────────────────────────────────
-    let repo = match Repository::open(dir) {
+    // discover() walks up the directory tree to find the .git folder,
+    // so this works whether dir is the repo root or any subdirectory within it.
+    let repo = match Repository::discover(dir) {
         Ok(r) => r,
         Err(e) => {
             tracing::warn!(dir = %dir.display(), "git: failed to open repository: {e}");
