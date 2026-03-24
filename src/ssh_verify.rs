@@ -192,6 +192,8 @@ async fn platform_api_verify(host: &str, key_bytes: &[u8]) -> Option<bool> {
 
 /// GitHub: GET https://api.github.com/meta → { ssh_keys: ["AAAA…", …] }
 async fn check_github_api(key_bytes: &[u8]) -> anyhow::Result<bool> {
+	println!("trying github api");
+
 	let client = reqwest::Client::builder()
 		.user_agent("stateless-gallery/1.0 ssh-key-verify")
 		.timeout(std::time::Duration::from_secs(8))
