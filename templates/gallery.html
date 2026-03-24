@@ -646,6 +646,10 @@
     document.getElementById("lb-prev").addEventListener("mousedown", function () { navigate(-1); });
     document.getElementById("lb-next").addEventListener("mousedown", function () { navigate(1); });
     document.getElementById("lb-close").addEventListener("mousedown", closeLightbox);
+    document.getElementById("lb-close").addEventListener("mousedown", function () {
+        exitFullscreen()
+        closeLightbox()
+    });
 
     lightbox.addEventListener("mousedown", function (e) {
         var t = e.target;
@@ -727,6 +731,16 @@
         setTrackX(0);
         setTimeout(function () { lbTrack.style.transition = ""; lbTrack.style.willChange = ""; }, ANIM_MS + 10);
     }, { passive: true });
+
+
+    function exitFullscreen() {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            return
+        }
+
+        if (document.exitFullscreen)              document.exitFullscreen();
+        else if (document.webkitExitFullscreen)   document.webkitExitFullscreen();
+    }
 
     // ── Swipe commit ──────────────────────────────────────────────────────────
     //
@@ -812,8 +826,7 @@
                 if (lightbox.requestFullscreen)            lightbox.requestFullscreen();
                 else if (lightbox.webkitRequestFullscreen) lightbox.webkitRequestFullscreen();
             } else {
-                if (document.exitFullscreen)              document.exitFullscreen();
-                else if (document.webkitExitFullscreen)   document.webkitExitFullscreen();
+                exitFullscreen()
             }
         });
 
