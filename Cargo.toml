@@ -32,7 +32,17 @@ bytes      = "1"
 # Filesystem watching (hot-reload on directory changes)
 notify     = "8"
 
+# Git integration (libgit2 — no git binary required)
 git2       = { version = "0.20.4", default-features = true, features = ["https", "ssh"] }
+
+# SSH host key verification: DNS (DoH / DoT / plain), SSHFP, known_hosts
+trust-dns-resolver = { version = "0.23", features = [
+    "tokio-runtime",
+    "dns-over-rustls",          # DoT (DNS-over-TLS) via rustls
+    "dns-over-https-rustls",    # DoH (DNS-over-HTTPS) via rustls, for trust-dns transport
+] }
+sha1 = "0.10"                   # SSHFP SHA-1 fingerprint comparison
+hmac = "0.12"                   # known_hosts hashed-entry HMAC-SHA1
 
 # File-system & utilities
 walkdir    = "2"
@@ -48,4 +58,3 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 
 reqwest = { version = "0.12", features = ["blocking", "json", "rustls-tls"] }
-trust-dns-resolver = "0.23"

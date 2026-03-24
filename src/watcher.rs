@@ -1,5 +1,8 @@
 use anyhow::{Context, Result};
-use git2::{cert::CertHostkey, AutotagOption, FetchOptions, RemoteCallbacks, Repository, ResetType};
+use git2::{
+	cert::{Cert, CertHostkey},
+	AutotagOption, CertificateCheckStatus, FetchOptions, RemoteCallbacks, Repository, ResetType,
+};
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{
 	collections::{HashMap, HashSet},
@@ -8,17 +11,17 @@ use std::{
 	time::Duration,
 };
 use tokio::sync::{mpsc, RwLock};
-use git2::{cert::Cert, CertificateCheckStatus};
 
-use crate::{config::{Config, NetworkConfig, PhotoDir}, gallery};
-use crate::gallery::ImageEntry;
+use crate::{
+	config::{Config, PhotoDir},
+	dns::DnsResolver,
+	gallery,
+	gallery::ImageEntry,
+	ssh_verify::SshVerifier,
+};
 
 const DEBOUNCE: Duration = Duration::from_millis(500);
 
-// Fallback poll interval. Catches changes the OS-level watcher misses:
-//   - New subdirectories added under a watched root on kqueue/FreeBSD.
-//   - Network-mounted volumes whose kernel driver doesn't emit events.
-//
 // Override at runtime: GALLERY_POLL_SECS=60 ./photo-gallery
 // Disable entirely:    GALLERY_POLL_SECS=0  ./photo-gallery
 const DEFAULT_POLL_SECS: u64 = 30;
@@ -35,172 +38,51 @@ pub fn spawn(config: Arc<Config>, gallery_images: GalleryMap) {
 
 // ── Git sync ──────────────────────────────────────────────────────────────────
 
-/// Synchronise a git-tracked photo directory before scanning.
-///
-/// Uses `git2` (libgit2) directly — no dependency on `git` being on `$PATH`.
-///
-/// Steps:
-///   1. Open the repository at `dir`.
-///   2. Fetch from `origin` (the configured remote, or the first remote found).
-///   3. Compare `HEAD` to `FETCH_HEAD` (the tip of the fetched branch).
-///      • If identical and `!force` → nothing to do, return `false`.
-///      • If different or `force`:
-///          - `force = true`  → hard-reset `HEAD` to `FETCH_HEAD`
-///            (discards all local changes; always matches remote).
-///          - `force = false` → fast-forward `HEAD` to `FETCH_HEAD`
-///            (only succeeds when `HEAD` is a direct ancestor; safe).
-///
-/// Credentials: tries SSH agent first, then falls back to the default SSH
-/// key pair (`~/.ssh/id_rsa`, `~/.ssh/id_ed25519`, etc.) via
-/// `ssh_key_from_agent` / `ssh_key`. For HTTPS repos, credential helpers
-/// configured in the system git config are used transparently by libgit2.
-///
-/// Returns `true` when new commits were pulled (gallery should rescan),
-/// `false` when nothing changed or on any error (scan proceeds with
-/// whatever is on disk regardless).
+async fn git_sync(photo_dir: &PhotoDir, verifier: &Arc<SshVerifier>) -> bool {
+	let photo_dir = photo_dir.clone();
+	let verifier  = Arc::clone(verifier);
 
-fn verify_host_key(
-    host: &str,
-    hostkey: &CertHostkey,
-    allow_tofu: bool,
-    net: &NetworkConfig,
-) -> anyhow::Result<bool> {
-    // 1. known_hosts
-    if let Ok(true) = check_known_hosts(host, hostkey) {
-        return Ok(true);
-    }
-
-    // 2. API providers
-    if let Ok(true) = check_provider_api(host, hostkey) {
-        return Ok(true);
-    }
-
-    // 3. DNS SSHFP
-    if let Ok(true) = check_sshfp(host, hostkey, net) {
-        return Ok(true);
-    }
-
-    // 4. TOFU
-    if allow_tofu {
-        add_to_known_hosts(host, hostkey)?;
-        return Ok(true);
-    }
-
-    Ok(false)
-}
-
-fn check_github(host: &str, key: &[u8]) -> anyhow::Result<bool> {
-    if !host.contains("github.com") {
-        return Ok(false);
-    }
-
-    let resp: serde_json::Value =
-        reqwest::blocking::get("https://api.github.com/meta")?.json()?;
-
-    if let Some(keys) = resp.get("ssh_keys").and_then(|k| k.as_array()) {
-        for k in keys {
-            if let Some(kstr) = k.as_str() {
-                if key_matches_openssh(key, kstr) {
-                    return Ok(true);
-                }
-            }
-        }
-    }
-
-    Ok(false)
-}
-
-fn check_provider_api(
-	host: &str,
-	key: &CertHostkey,
-) -> anyhow::Result<bool> {
-    let raw = hostkey_to_bytes(key)?;
-
-    if check_github(host, &raw)? { return Ok(true); }
-    // if check_gitlab(host, &raw)? { return Ok(true); }
-    // if check_codeberg(host, &raw)? { return Ok(true); }
-    // if check_gitea(host, &raw)? { return Ok(true); }
-
-    Ok(false)
-}
-
-fn check_sshfp(
-	host: &str,
-	hostkey: &CertHostkey,
-	net: &NetworkConfig,
-) -> anyhow::Result<bool> {
-    let fp = compute_sshfp(hostkey)?;
-
-    for group in &net.dns {
-        let results: Vec<_> = group.servers.iter()
-            .map(|s| query_sshfp_server(host, s))
-            .collect();
-
-        for res in results {
-            if let Ok(records) = res {
-                if records.iter().any(|r| r == &fp) {
-                    return Ok(true);
-                }
-            }
-        }
-    }
-
-    Ok(false)
-}
-
-// async fn git_sync(dir: &Path, force: bool, ssh_key: Option<&Path>,) -> bool {
-async fn git_sync(
-	photo_dir: &PhotoDir,
-	netconf: &NetworkConfig,
-) -> bool {
-
-    let photo_dir = photo_dir.clone();
-    let netconf = netconf.clone();
-	tokio::task::spawn_blocking(move || git_sync_blocking(
-		&photo_dir,
-		&netconf,
-	))
+	tokio::task::spawn_blocking(move || {
+		let handle = tokio::runtime::Handle::current();
+		git_sync_blocking(&photo_dir, &verifier, &handle)
+	})
 	.await
 	.unwrap_or(false)
 }
 
-// fn git_sync_blocking(dir: &Path, force: bool, ssh_key: Option<&Path>) -> bool {
 fn git_sync_blocking(
 	photo_dir: &PhotoDir,
-	netconf: &NetworkConfig,
+	verifier:  &Arc<SshVerifier>,
+	handle:    &tokio::runtime::Handle,
 ) -> bool {
-	let dir = photo_dir.dir.to_path_buf();
-	let ssh_key = photo_dir.git_ssh_key.map(|p| p.to_path_buf());
+	let dir   = photo_dir.dir.as_path();
 	let force = photo_dir.git_force_pull;
 
-	// ── Open repository ───────────────────────────────────────────────────────
-	// discover() walks up the directory tree to find the .git folder,
-	// so this works whether dir is the repo root or any subdirectory within it.
+	// discover() walks up the directory tree to find .git, so this works
+	// whether dir is the repo root or a subdirectory within it.
 	let repo = match Repository::discover(dir) {
-		Ok(r) => r,
+		Ok(r)  => r,
 		Err(e) => {
 			tracing::warn!(dir = %dir.display(), "git: failed to open repository: {e}");
 			return false;
 		}
 	};
 
-	// ── Resolve the remote name ───────────────────────────────────────────────
 	// Prefer "origin"; fall back to the first configured remote.
 	let remote_name = {
 		let remotes = match repo.remotes() {
-			Ok(r) => r,
+			Ok(r)  => r,
 			Err(e) => {
 				tracing::warn!(dir = %dir.display(), "git: failed to list remotes: {e}");
 				return false;
 			}
 		};
-
 		if remotes.iter().flatten().any(|n| n == "origin") {
 			"origin".to_string()
 		} else {
 			match remotes.iter().flatten().next() {
 				Some(n) => n.to_string(),
-				None => {
+				None    => {
 					tracing::warn!(dir = %dir.display(), "git: no remotes configured");
 					return false;
 				}
@@ -208,134 +90,145 @@ fn git_sync_blocking(
 		}
 	};
 
-	// ── Fetch ─────────────────────────────────────────────────────────────────
-	// Build callbacks that try SSH agent first, then fall back to the default
-	// SSH key files.  This covers the most common deployment scenarios without
-	// requiring credentials to be embedded in the config file.
+	// ── Build callbacks ───────────────────────────────────────────────────────
 	let mut callbacks = RemoteCallbacks::new();
-	let ssh_key = ssh_key.map(|p| p.to_path_buf());
 
-
-	callbacks.certificate_check(move |cert: &Cert<'_>, hostname| {
-		let Some(hostkey) = cert.as_hostkey() else {
-			return Ok(CertificateCheckStatus::CertificateOk);
-		};
-
-		match verify_host_key(hostname, hostkey, photo_dir.git_ssh_add_new_key, &netconf) {
-			Ok(true) => Ok(CertificateCheckStatus::CertificateOk),
-			Ok(false) => Err(git2::Error::from_str("host key verification failed")),
-			Err(e) => Err(git2::Error::from_str(&e.to_string())),
-		}
-	});
-	callbacks.credentials(move |_url, username_from_url, allowed| {
-		let username = username_from_url.unwrap_or("git");
-
-		// 1. Explicit key from config — tried first when provided.
-		if allowed.is_ssh_key() {
-			if let Some(ref key_path) = ssh_key {
-				let pub_path = key_path.with_extension(
-					format!("{}.pub", key_path.extension()
-						.and_then(|e| e.to_str()).unwrap_or(""))
-					.trim_start_matches('.')
-				);
-				// Use the .pub sidecar if it exists; otherwise pass None and
-				// let libgit2 derive the public key from the private key.
-				let pub_opt = if pub_path.exists() { Some(pub_path.as_path()) } else { None };
-				if let Ok(cred) = git2::Cred::ssh_key(username, pub_opt, key_path, None) {
-					return Ok(cred);
-				}
+	// SSH host key verification.
+	{
+		let verifier       = Arc::clone(verifier);
+		let add_new_key    = photo_dir.git_ssh_add_new_key;
+		let handle         = handle.clone();
+		callbacks.certificate_check(move |cert: &Cert<'_>, hostname| {
+			let Some(hostkey) = cert.as_hostkey() else {
+				// Non-SSH certificate (e.g. TLS); pass through.
+				return Ok(CertificateCheckStatus::CertificateOk);
+			};
+			let result = handle.block_on(verifier.verify(hostname, hostkey, add_new_key));
+			if result.is_ok() {
+				Ok(CertificateCheckStatus::CertificateOk)
+			} else {
+				let msg = match result {
+					crate::ssh_verify::VerifyResult::KeyChanged =>
+						"host key has changed — possible MITM attack",
+					_ => "host key verification failed",
+				};
+				tracing::error!(host = %hostname, "git: {msg}");
+				Err(git2::Error::from_str(msg))
 			}
-		}
+		});
+	}
 
-		// 2. SSH agent (covers key-based auth forwarded via ssh-agent).
-		if allowed.is_ssh_key() {
-			if let Ok(cred) = git2::Cred::ssh_key_from_agent(username) {
-				return Ok(cred);
-			}
-		}
+	// SSH / HTTPS credential resolution.
+	{
+		let ssh_key = photo_dir.git_ssh_key.clone();
+		callbacks.credentials(move |_url, username_from_url, allowed| {
+			let username = username_from_url.unwrap_or("git");
 
-		// 3. Default key files in ~/.ssh/.
-		if allowed.is_ssh_key() {
-			let home = std::env::var("HOME").unwrap_or_default();
-			for key_name in &["id_ed25519", "id_rsa", "id_ecdsa"] {
-				let private = PathBuf::from(&home).join(".ssh").join(key_name);
-				let public  = PathBuf::from(&home).join(".ssh").join(format!("{key_name}.pub"));
-				if private.exists() {
-					if let Ok(cred) = git2::Cred::ssh_key(
-						username,
-						Some(&public),
-						&private,
-						None,
-					) {
+			// 1. Explicit key from config.
+			if allowed.is_ssh_key() {
+				if let Some(ref key_path) = ssh_key {
+					let pub_path = {
+						let mut p = key_path.clone();
+						let new_name = format!(
+							"{}.pub",
+							p.file_name().and_then(|n| n.to_str()).unwrap_or("")
+						);
+						p.set_file_name(new_name);
+						p
+					};
+					let pub_opt = if pub_path.exists() { Some(pub_path.as_path()) } else { None };
+					if let Ok(cred) = git2::Cred::ssh_key(username, pub_opt, key_path, None) {
 						return Ok(cred);
 					}
 				}
 			}
-		}
 
-		// 4. Default credentials (picks up credential helpers for HTTPS).
-		git2::Cred::default()
-	});
+			// 2. SSH agent.
+			if allowed.is_ssh_key() {
+				if let Ok(cred) = git2::Cred::ssh_key_from_agent(username) {
+					return Ok(cred);
+				}
+			}
 
+			// 3. Default key files in ~/.ssh/.
+			if allowed.is_ssh_key() {
+				let home = std::env::var("HOME").unwrap_or_default();
+				for key_name in &["id_ed25519", "id_rsa", "id_ecdsa"] {
+					let private = PathBuf::from(&home).join(".ssh").join(key_name);
+					let public  = PathBuf::from(&home).join(".ssh")
+										.join(format!("{key_name}.pub"));
+					if private.exists() {
+						let pub_opt = if public.exists() { Some(public.as_path()) } else { None };
+						if let Ok(cred) = git2::Cred::ssh_key(username, pub_opt, &private, None) {
+							return Ok(cred);
+						}
+					}
+				}
+			}
+
+			// 4. Default (picks up HTTPS credential helpers).
+			git2::Cred::default()
+		});
+	}
+
+	// ── Fetch ─────────────────────────────────────────────────────────────────
 	let mut fetch_opts = FetchOptions::new();
 	fetch_opts.remote_callbacks(callbacks);
 	fetch_opts.download_tags(AutotagOption::Unspecified);
 
 	let mut remote = match repo.find_remote(&remote_name) {
-		Ok(r) => r,
+		Ok(r)  => r,
 		Err(e) => {
-			tracing::warn!(dir = %dir.display(), remote = %remote_name, "git: remote not found: {e}");
+			tracing::warn!(dir = %dir.display(), remote = %remote_name,
+						   "git: remote not found: {e}");
 			return false;
 		}
 	};
 
-	// Fetch all branches tracked by the remote.
 	if let Err(e) = remote.fetch(&[] as &[&str], Some(&mut fetch_opts), None) {
 		tracing::warn!(dir = %dir.display(), "git fetch failed: {e}");
 		return false;
 	}
 
-	// ── Resolve HEAD and FETCH_HEAD ───────────────────────────────────────────
+	// ── Compare HEAD ↔ FETCH_HEAD ────────────────────────────────────────────
 	let head_oid = match repo.head().and_then(|r| r.peel_to_commit()) {
-		Ok(c) => c.id(),
+		Ok(c)  => c.id(),
 		Err(e) => {
 			tracing::warn!(dir = %dir.display(), "git: cannot resolve HEAD: {e}");
 			return false;
 		}
 	};
 
-	let fetch_head_oid = match repo.find_reference("FETCH_HEAD").and_then(|r| r.peel_to_commit()) {
-		Ok(c) => c.id(),
-		Err(e) => {
-			tracing::warn!(dir = %dir.display(), "git: cannot resolve FETCH_HEAD: {e}");
-			return false;
-		}
-	};
+	let fetch_head_oid =
+		match repo.find_reference("FETCH_HEAD").and_then(|r| r.peel_to_commit()) {
+			Ok(c)  => c.id(),
+			Err(e) => {
+				tracing::warn!(dir = %dir.display(),
+							   "git: cannot resolve FETCH_HEAD: {e}");
+				return false;
+			}
+		};
 
 	if head_oid == fetch_head_oid && !force {
 		tracing::debug!(dir = %dir.display(), "git: already up to date");
 		return false;
 	}
 
-	// ── Apply changes ─────────────────────────────────────────────────────────
 	let fetch_head_commit = match repo.find_commit(fetch_head_oid) {
-		Ok(c) => c,
+		Ok(c)  => c,
 		Err(e) => {
-			tracing::warn!(dir = %dir.display(), "git: cannot find FETCH_HEAD commit: {e}");
+			tracing::warn!(dir = %dir.display(),
+						   "git: cannot find FETCH_HEAD commit: {e}");
 			return false;
 		}
 	};
 
+	// ── Apply ─────────────────────────────────────────────────────────────────
 	if force {
-		// Hard reset: discard all local changes and set HEAD to FETCH_HEAD.
-		let obj = fetch_head_commit.as_object();
-		match repo.reset(obj, ResetType::Hard, None) {
+		match repo.reset(fetch_head_commit.as_object(), ResetType::Hard, None) {
 			Ok(()) => {
-				tracing::info!(
-					dir = %dir.display(),
-					commit = %fetch_head_oid,
-					"git force-reset to FETCH_HEAD"
-				);
+				tracing::info!(dir = %dir.display(), commit = %fetch_head_oid,
+							   "git force-reset to FETCH_HEAD");
 				true
 			}
 			Err(e) => {
@@ -344,18 +237,17 @@ fn git_sync_blocking(
 			}
 		}
 	} else {
-		// Fast-forward: only advance HEAD if it is a direct ancestor.
-		// This is equivalent to `git merge --ff-only FETCH_HEAD`.
 		let fetch_head_annotated = match repo.find_annotated_commit(fetch_head_oid) {
 			Ok(ac) => ac,
 			Err(e) => {
-				tracing::warn!(dir = %dir.display(), "git: cannot build annotated FETCH_HEAD: {e}");
+				tracing::warn!(dir = %dir.display(),
+							   "git: cannot build annotated FETCH_HEAD: {e}");
 				return false;
 			}
 		};
 
-		let (analysis, _pref) = match repo.merge_analysis(&[&fetch_head_annotated]) {
-			Ok(v) => v,
+		let (analysis, _) = match repo.merge_analysis(&[&fetch_head_annotated]) {
+			Ok(v)  => v,
 			Err(e) => {
 				tracing::warn!(dir = %dir.display(), "git merge analysis failed: {e}");
 				return false;
@@ -366,41 +258,33 @@ fn git_sync_blocking(
 			tracing::debug!(dir = %dir.display(), "git: already up to date");
 			return false;
 		}
-
 		if !analysis.is_fast_forward() {
-			tracing::warn!(
-				dir = %dir.display(),
-				"git: fast-forward not possible (history diverged); \
-				 use git_force_pull: true to override"
-			);
+			tracing::warn!(dir = %dir.display(),
+						   "git: fast-forward not possible (history diverged); \
+							use git_force_pull: true to override");
 			return false;
 		}
 
-		// Move HEAD ref to FETCH_HEAD.
 		let refname = match repo.head() {
-			Ok(r) => r.name().unwrap_or("HEAD").to_string(),
+			Ok(r)  => r.name().unwrap_or("HEAD").to_string(),
 			Err(_) => "HEAD".to_string(),
 		};
 
-		match repo.find_reference(&refname)
+		let result = repo.find_reference(&refname)
 			.and_then(|mut r| {
-				r.set_target(
-					fetch_head_oid,
-					&format!("fast-forward to {fetch_head_oid}"),
-				)?;
+				r.set_target(fetch_head_oid,
+							 &format!("fast-forward to {fetch_head_oid}"))?;
 				Ok(())
 			})
 			.and_then(|()| {
 				repo.set_head(&refname)?;
 				repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
-			})
-		{
+			});
+
+		match result {
 			Ok(()) => {
-				tracing::info!(
-					dir = %dir.display(),
-					commit = %fetch_head_oid,
-					"git fast-forward to FETCH_HEAD"
-				);
+				tracing::info!(dir = %dir.display(), commit = %fetch_head_oid,
+							   "git fast-forward to FETCH_HEAD");
 				true
 			}
 			Err(e) => {
@@ -411,12 +295,15 @@ fn git_sync_blocking(
 	}
 }
 
-// ── Watcher ───────────────────────────────────────────────────────────────────
+// ── Watcher loop ──────────────────────────────────────────────────────────────
 
 async fn run(config: Arc<Config>, gallery_images: GalleryMap) -> Result<()> {
+	// Build the SSH verifier once; shared across all git syncs.
+	let dns      = Arc::new(DnsResolver::new(&config.network));
+	let verifier = Arc::new(SshVerifier::new(dns));
+
 	let (tx, mut rx) = mpsc::unbounded_channel::<notify::Result<Event>>();
 
-	// Build mapping: canonical dir → gallery slugs that contain it.
 	let mut dir_to_slugs: HashMap<PathBuf, Vec<String>> = HashMap::new();
 	for gallery in &config.galleries {
 		for photo_dir in &gallery.photo_dirs {
@@ -473,7 +360,6 @@ async fn run(config: Arc<Config>, gallery_images: GalleryMap) -> Result<()> {
 
 	let all_slugs: Vec<String> = config.galleries.iter().map(|g| g.url.clone()).collect();
 
-	// Precompute git-enabled dirs per slug to avoid re-scanning on every tick.
 	let git_dirs: HashMap<String, Vec<PhotoDir>> = config.galleries.iter()
 		.map(|g| {
 			let dirs = g.photo_dirs.iter().filter(|d| d.git).cloned().collect();
@@ -500,29 +386,23 @@ async fn run(config: Arc<Config>, gallery_images: GalleryMap) -> Result<()> {
 					}
 				}
 			}
-
 			_ = poll_tick.tick() => {
 				tracing::debug!("poll tick: queuing rescan of all galleries");
 				pending_slugs.extend(all_slugs.iter().cloned());
 			}
 		}
 
-		if pending_slugs.is_empty() {
-			continue;
-		}
+		if pending_slugs.is_empty() { continue; }
 
 		for slug in pending_slugs.drain() {
 			let Some(gallery_cfg) = config.galleries.iter().find(|g| g.url == slug) else {
 				continue;
 			};
 
-			// Git sync runs before scan_gallery so pulled files are included.
+			// Git sync (fetch + verify + merge/reset) before scanning.
 			if let Some(dirs) = git_dirs.get(&slug) {
 				for photo_dir in dirs {
-					git_sync(
-						&photo_dir,
-						&config.network,
-					).await;
+					git_sync(photo_dir, &verifier).await;
 				}
 			}
 
@@ -532,22 +412,19 @@ async fn run(config: Arc<Config>, gallery_images: GalleryMap) -> Result<()> {
 					let old_count = map.get(&slug).map(|v| v.len()).unwrap_or(0);
 					let new_count = images.len();
 					map.insert(slug.clone(), images);
-
 					if new_count != old_count {
 						tracing::info!(
-							gallery = %slug,
-							old = old_count,
+							gallery = %slug, old = old_count,
 							new = new_count,
 							delta = new_count as i64 - old_count as i64,
 							"hot-reloaded gallery"
 						);
 					} else {
-						tracing::trace!(gallery = %slug, count = new_count, "poll rescan: no change");
+						tracing::trace!(gallery = %slug, count = new_count,
+										"poll rescan: no change");
 					}
 				}
-				Err(e) => {
-					tracing::error!(gallery = %slug, "rescan failed: {e:#}");
-				}
+				Err(e) => tracing::error!(gallery = %slug, "rescan failed: {e:#}"),
 			}
 		}
 	}
@@ -559,13 +436,11 @@ fn handle_event(
 	pending: &mut HashSet<String>,
 ) {
 	let Some(Ok(ev)) = event else { return };
-
 	use notify::EventKind;
 	match ev.kind {
 		EventKind::Create(_) | EventKind::Remove(_) | EventKind::Modify(_) => {}
 		_ => return,
 	}
-
 	for changed_path in &ev.paths {
 		for (watched_dir, slugs) in dir_to_slugs {
 			if changed_path.starts_with(watched_dir) {

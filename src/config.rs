@@ -99,6 +99,9 @@ pub struct PhotoDir {
     /// does not exist libgit2 will attempt to derive it from the private key.
     pub git_ssh_key: Option<PathBuf>,
 
+    /// If `true`, a host key not found in any trusted source is accepted for
+    /// this session and written to `~/.ssh/known_hosts`.  A *changed* key
+    /// (previously seen host, now different) is still always rejected.
     pub git_ssh_add_new_key: bool,
 }
 
@@ -117,6 +120,8 @@ enum PhotoDirDe {
         git_force_pull: bool,
         #[serde(default)]
         git_ssh_key: Option<PathBuf>,
+        #[serde(default)]
+        git_ssh_add_new_key: bool,
     },
 }
 
@@ -128,13 +133,16 @@ impl<'de> Deserialize<'de> for PhotoDir {
                 git: false,
                 git_force_pull: false,
                 git_ssh_key: None,
+                git_ssh_add_new_key: false,
             }),
-            PhotoDirDe::Full { dir, git, git_force_pull, git_ssh_key } => Ok(PhotoDir {
-                dir,
-                git: git || git_force_pull,
-                git_force_pull,
-                git_ssh_key,
-            }),
+            PhotoDirDe::Full { dir, git, git_force_pull, git_ssh_key, git_ssh_add_new_key } =>
+                Ok(PhotoDir {
+                    dir,
+                    git: git || git_force_pull,
+                    git_force_pull,
+                    git_ssh_key,
+                    git_ssh_add_new_key,
+                }),
         }
     }
 }
@@ -176,10 +184,19 @@ pub struct DnsGroup {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct DnsServer {
+    /// IP address or hostname of the DNS server.
     pub host: String,
+    /// Port override. Defaults: DoT=853, DoH=443, DNS=53.
     #[serde(default)]
     pub port: Option<u16>,
+    /// Protocol: "doh" | "dot" | "dns"
     #[serde(rename = "type")]
-    pub kind: String, // doh | dot | dns
+    pub kind: String,
+    /// TLS SNI hostname for DoT and DoH connections.
+    /// Required for DoT when `host` is an IP address unless the IP is a
+    /// well-known resolver (Cloudflare, Google, Quad9 — auto-detected).
+    /// For DoH, defaults to `host` when it is a hostname.
+    #[serde(default)]
+    pub tls_name: Option<String>,
 }
 

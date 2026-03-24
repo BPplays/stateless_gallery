@@ -1,6 +1,8 @@
 mod config;
+mod dns;
 mod gallery;
 mod handlers;
+mod ssh_verify;
 mod template;
 mod thumbnail;
 mod watcher;
