@@ -45,3 +45,7 @@ mime_guess = "2"
 anyhow             = "1"
 tracing            = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+
+reqwest = { version = "0.12", features = ["blocking", "json", "rustls-tls"] }
+trust-dns-resolver = "0.23"

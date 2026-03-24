@@ -1,6 +1,27 @@
 # photo-gallery example configuration
 # Run with: photo-gallery -c example.yaml
 
+network:
+  dns:
+    - group: "dot"
+      servers:
+        - host: "2001:4860:4860::8888"
+          type: "doh"
+
+        - host: "2620:fe::fe"
+          type: "dot"
+
+
+    - group: "dns"
+      servers:
+      - host: "2620:fe::fe"
+        type: "dns"
+
+      - host: "2620:fe::fe"
+        port: 9991
+        type: "dns"
+
+
 galleries:
   # Public gallery — no secret required.
   - name: "Gallery Public"
@@ -23,6 +44,7 @@ galleries:
         git: true
         git_force_pull: true
         git_ssh_key: /home/user/.ssh/gallery_deploy_key
+        git_ssh_add_new_key: true
       # Plain directory — no git tracking.
       - dir: /home/user/Pictures/family
 

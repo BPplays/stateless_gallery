@@ -17,6 +17,9 @@ pub struct Config {
     /// Thumbnail generation settings (shared across all galleries).
     #[serde(default)]
     pub thumbnails: ThumbnailConfig,
+
+    #[serde(default)]
+    pub network: NetworkConfig,
 }
 
 fn default_bind() -> String {
@@ -95,6 +98,8 @@ pub struct PhotoDir {
     /// The matching public key is inferred by appending `.pub`; if that file
     /// does not exist libgit2 will attempt to derive it from the private key.
     pub git_ssh_key: Option<PathBuf>,
+
+    pub git_ssh_add_new_key: bool,
 }
 
 /// Private helper enum used only for deserialization.
@@ -156,3 +161,25 @@ impl Default for ThumbnailConfig {
         Self { enabled: true, max_size: 640, quality: 90, preserve_gainmaps: true }
     }
 }
+
+#[derive(Deserialize, Clone, Debug, Default)]
+pub struct NetworkConfig {
+    #[serde(default)]
+    pub dns: Vec<DnsGroup>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct DnsGroup {
+    pub group: String, // "doh", "dot", "dns"
+    pub servers: Vec<DnsServer>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct DnsServer {
+    pub host: String,
+    #[serde(default)]
+    pub port: Option<u16>,
+    #[serde(rename = "type")]
+    pub kind: String, // doh | dot | dns
+}
+
