@@ -224,10 +224,16 @@ fn git_sync_blocking(dir: &Path, force: bool, ssh_key: Option<&Path>) -> bool {
     } else {
         // Fast-forward: only advance HEAD if it is a direct ancestor.
         // This is equivalent to `git merge --ff-only FETCH_HEAD`.
-        let analysis = match repo.merge_analysis(&[&fetch_head_commit.as_annotated_commit()
-            .unwrap_or_else(|_| unreachable!())])
-        {
-            Ok((a, _)) => a,
+        let fetch_head_annotated = match repo.find_annotated_commit(fetch_head_oid) {
+            Ok(ac) => ac,
+            Err(e) => {
+                tracing::warn!(dir = %dir.display(), "git: cannot build annotated FETCH_HEAD: {e}");
+                return false;
+            }
+        };
+
+        let (analysis, _pref) = match repo.merge_analysis(&[&fetch_head_annotated]) {
+            Ok(v) => v,
             Err(e) => {
                 tracing::warn!(dir = %dir.display(), "git merge analysis failed: {e}");
                 return false;

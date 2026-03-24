@@ -32,7 +32,7 @@ bytes      = "1"
 # Filesystem watching (hot-reload on directory changes)
 notify     = "8"
 
-git2       = { version = "0.19", default-features = false, features = ["https", "ssh", "ssh_key_from_memory"] }
+git2       = { version = "0.20.4", default-features = true, features = ["https", "ssh"] }
 
 # File-system & utilities
 walkdir    = "2"
