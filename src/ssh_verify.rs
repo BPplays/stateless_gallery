@@ -246,6 +246,8 @@ async fn check_github_api(key_bytes: &[u8]) -> anyhow::Result<bool> {
 		})
 		.any(|decoded| decoded == key_bytes);
 
+	tracing::info!(found = found, "finished github api");
+
 	// If the API returned keys but none matched, the key has changed.
 	Ok(found)
 }
@@ -308,7 +310,7 @@ fn known_hosts_lookup(host: &str, key_type: &str, key_bytes: &[u8]) -> KnownHost
 			continue;
 		}
 
-		let parts: Vec<&str> = line.splitn(3, ' ').collect();
+		let parts: Vec<&str> = line.split_whitespace().collect();
 		if parts.len() < 3 {
 			continue;
 		}
