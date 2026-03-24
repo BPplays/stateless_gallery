@@ -24,7 +24,7 @@ const SYNC_COOLDOWN: Duration = Duration::from_secs(29);
 
 // Override at runtime: GALLERY_POLL_SECS=60 ./photo-gallery
 // Disable entirely:    GALLERY_POLL_SECS=0  ./photo-gallery
-const DEFAULT_POLL_SECS: u64 = 5;
+const DEFAULT_POLL_SECS: u64 = 30;
 
 pub type GalleryMap = Arc<RwLock<HashMap<String, Vec<ImageEntry>>>>;
 
