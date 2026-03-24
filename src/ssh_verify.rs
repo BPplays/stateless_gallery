@@ -233,7 +233,16 @@ async fn check_github_api(key_bytes: &[u8]) -> anyhow::Result<bool> {
 
 	let found = keys.iter()
 		.filter_map(|k| k.as_str())
-		.any(|k| openssh_blob_matches(k, key_bytes));
+		.filter_map(|k| {
+			let mut parts = k.split_whitespace();
+			let _algo = parts.next()?;
+			let b64 = parts.next()?;
+			Some(b64)
+		})
+		.filter_map(|b64| {
+			base64::engine::general_purpose::STANDARD.decode(b64).ok()
+		})
+		.any(|decoded| decoded == key_bytes);
 
 	// If the API returned keys but none matched, the key has changed.
 	Ok(found)
