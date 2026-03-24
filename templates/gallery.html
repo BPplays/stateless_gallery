@@ -731,9 +731,16 @@
         setTimeout(function () { lbTrack.style.transition = ""; lbTrack.style.willChange = ""; }, ANIM_MS + 10);
     }, { passive: true });
 
+    function isFullscreen() {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            return false
+        }
+
+        return true
+    }
 
     function exitFullscreen() {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (!isFullscreen()) {
             return
         }
 
@@ -821,7 +828,7 @@
 
         btn.addEventListener("mousedown", function (e) {
             e.stopPropagation();
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            if (!isFullscreen()) {
                 if (lightbox.requestFullscreen)            lightbox.requestFullscreen();
                 else if (lightbox.webkitRequestFullscreen) lightbox.webkitRequestFullscreen();
             } else {
