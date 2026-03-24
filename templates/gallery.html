@@ -645,7 +645,6 @@
     // ── Button controls ───────────────────────────────────────────────────────
     document.getElementById("lb-prev").addEventListener("mousedown", function () { navigate(-1); });
     document.getElementById("lb-next").addEventListener("mousedown", function () { navigate(1); });
-    document.getElementById("lb-close").addEventListener("mousedown", closeLightbox);
     document.getElementById("lb-close").addEventListener("mousedown", function () {
         exitFullscreen()
         closeLightbox()
