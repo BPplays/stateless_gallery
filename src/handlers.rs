@@ -7,7 +7,7 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use serde::Deserialize;
 use std::{path::PathBuf, sync::Arc};
 
-use crate::{template, thumbnail, AppState};
+use crate::{config::PhotoDir, template, thumbnail, AppState};
 
 // ─── Query params ─────────────────────────────────────────────────────────────
 
@@ -32,10 +32,10 @@ fn decode_path(encoded: &str) -> Option<PathBuf> {
 // ─── Path guard ───────────────────────────────────────────────────────────────
 
 /// Reject any path not under one of the gallery's photo_dirs.
-fn is_allowed(path: &std::path::Path, dirs: &[PathBuf]) -> bool {
+fn is_allowed(path: &std::path::Path, dirs: &[PhotoDir]) -> bool {
     let Ok(canonical) = path.canonicalize() else { return false };
     dirs.iter().any(|d| {
-        d.canonicalize()
+        d.dir.canonicalize()
             .map(|cd| canonical.starts_with(&cd))
             .unwrap_or(false)
     })

@@ -7,7 +7,7 @@ galleries:
     url: "gallery_pub"
     secret: ""
     photo_dirs:
-      - /home/user/Pictures/public
+      - dir: /home/user/Pictures/public
 
   # Unlisted gallery — requires ?secret=secretpass in the URL.
   # Share the full URL: http://yourhost:8080/gallery_unlisted?secret=secretpass
@@ -15,8 +15,22 @@ galleries:
     url: "gallery_unlisted"
     secret: "secretpass"
     photo_dirs:
-      - /home/user/Pictures/vacation-2024
-      - /home/user/Pictures/family
+      # Git-tracked directory: fetch on every scan, pull if new commits found.
+      # Use git_force_pull: true to always reset to remote HEAD regardless of
+      # local state (equivalent to: git fetch origin && git reset --hard FETCH_HEAD).
+      # Use git_ssh_key to specify a deploy key instead of your default ~/.ssh/ keys.
+      - dir: /home/user/Pictures/vacation-2024
+        git: true
+        git_force_pull: true
+        git_ssh_key: /home/user/.ssh/gallery_deploy_key
+      # Plain directory — no git tracking.
+      - dir: /home/user/Pictures/family
+
+  # Backward-compatible plain-string form still works.
+  - name: "Gallery Legacy"
+    url: "gallery_legacy"
+    photo_dirs:
+      - /home/user/Pictures/old-format
 
 # Directory used to cache generated thumbnail files.
 # Created automatically on startup. Safe to delete — thumbnails regenerate on demand.
@@ -28,14 +42,14 @@ cache_dir: /tmp/photo-gallery-cache
 bind: "[::1]:8080"
 
 thumbnails:
-  # true  → generate smaller JPEG thumbnails for the grid (recommended).
+  # true  → generate smaller AVIF thumbnails for the grid (recommended).
   # false → serve full-size originals as thumbnails; cache_dir is unused.
   enabled: true
 
   # Maximum dimension (width or height) in pixels; aspect ratio is preserved.
   max_size: 640
 
-  # JPEG quality for generated thumbnails (1–100).
+  # AVIF quality for generated thumbnails (1–100).
   quality: 90
 
   # Preserve HDR gainmap metadata in thumbnails:

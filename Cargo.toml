@@ -32,6 +32,8 @@ bytes      = "1"
 # Filesystem watching (hot-reload on directory changes)
 notify     = "8"
 
+git2       = { version = "0.19", default-features = false, features = ["https", "ssh", "ssh_key_from_memory"] }
+
 # File-system & utilities
 walkdir    = "2"
 base64     = "0.22"

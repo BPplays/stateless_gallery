@@ -16,7 +16,9 @@ pub struct ImageEntry {
 pub fn scan_gallery(gallery: &GalleryConfig) -> Result<Vec<ImageEntry>> {
     let mut images: Vec<ImageEntry> = Vec::new();
 
-    for dir in &gallery.photo_dirs {
+    for photo_dir in &gallery.photo_dirs {
+        let dir = &photo_dir.dir;
+
         if !dir.exists() {
             tracing::warn!(
                 gallery = %gallery.url,
@@ -45,7 +47,6 @@ pub fn scan_gallery(gallery: &GalleryConfig) -> Result<Vec<ImageEntry>> {
                         .map(|n| n.to_string_lossy().into_owned())
                         .unwrap_or_default();
                     images.push(ImageEntry { path, filename });
-
                 }
             }
         }

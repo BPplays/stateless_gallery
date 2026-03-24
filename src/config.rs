@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::path::PathBuf;
 
 /// Top-level gallery configuration (YAML).
@@ -30,36 +30,21 @@ pub struct GalleryConfig {
     pub name: String,
 
     /// URL slug under which this gallery is served.
-    ///
-    /// A gallery with `url: "holidays"` is reachable at:
-    ///   `http://host:port/holidays`
-    ///
-    /// The slug must be non-empty and contain only URL-safe characters
-    /// (letters, digits, hyphens, underscores).
     pub url: String,
 
     /// Optional access secret.
-    ///
-    /// When non-empty every request to this gallery **must** include
-    /// `?secret=<value>` (in the index page URL *and* automatically
-    /// appended to thumb/full URLs by the client-side JS).
-    ///
-    /// An empty string (or omitting the field) means the gallery is public.
     #[serde(default)]
     pub secret: String,
 
     /// Directories scanned recursively for images.
-    pub photo_dirs: Vec<PathBuf>,
+    pub photo_dirs: Vec<PhotoDir>,
 }
 
 impl GalleryConfig {
-    /// Returns `true` if this gallery requires a secret to access.
     pub fn requires_secret(&self) -> bool {
         !self.secret.is_empty()
     }
 
-    /// Constant-time-ish secret comparison (avoids short-circuit on first
-    /// differing byte; good enough for a URL token).
     pub fn secret_matches(&self, candidate: &str) -> bool {
         let a = self.secret.as_bytes();
         let b = candidate.as_bytes();
@@ -68,6 +53,84 @@ impl GalleryConfig {
         }
         let mismatch = a.iter().zip(b.iter()).fold(0u8, |acc, (x, y)| acc | (x ^ y));
         mismatch == 0
+    }
+}
+
+/// A photo directory entry.
+///
+/// Accepts two YAML forms:
+///
+/// Plain path (backward-compatible):
+/// ```yaml
+/// photo_dirs:
+///   - /home/user/Pictures/public
+/// ```
+///
+/// Object form with optional git tracking:
+/// ```yaml
+/// photo_dirs:
+///   - dir: /home/user/Pictures/public
+///   - dir: /home/user/Pictures/vacation
+///     git: true            # fetch on every scan; pull if new commits found
+///     git_force_pull: true # force-reset to remote HEAD (discards local changes)
+///     git_ssh_key: /home/user/.ssh/deploy_key  # optional: explicit private key
+/// ```
+#[derive(Clone, Debug)]
+pub struct PhotoDir {
+    /// The filesystem path to scan.
+    pub dir: PathBuf,
+
+    /// If `true`, fetch from the configured remote before every scan and
+    /// merge (or reset) if new commits are found.
+    pub git: bool,
+
+    /// If `true` (implies `git: true`), force-reset to the remote HEAD on
+    /// every scan, discarding any local modifications.
+    pub git_force_pull: bool,
+
+    /// Optional path to a specific SSH private key file to use when
+    /// authenticating with the remote.  When absent the credential callback
+    /// tries the SSH agent and the standard key files in `~/.ssh/` instead.
+    ///
+    /// The matching public key is inferred by appending `.pub`; if that file
+    /// does not exist libgit2 will attempt to derive it from the private key.
+    pub git_ssh_key: Option<PathBuf>,
+}
+
+/// Private helper enum used only for deserialization.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum PhotoDirDe {
+    /// `- /some/path`
+    Path(PathBuf),
+    /// Object form with all optional git fields.
+    Full {
+        dir: PathBuf,
+        #[serde(default)]
+        git: bool,
+        #[serde(default)]
+        git_force_pull: bool,
+        #[serde(default)]
+        git_ssh_key: Option<PathBuf>,
+    },
+}
+
+impl<'de> Deserialize<'de> for PhotoDir {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        match PhotoDirDe::deserialize(deserializer)? {
+            PhotoDirDe::Path(dir) => Ok(PhotoDir {
+                dir,
+                git: false,
+                git_force_pull: false,
+                git_ssh_key: None,
+            }),
+            PhotoDirDe::Full { dir, git, git_force_pull, git_ssh_key } => Ok(PhotoDir {
+                dir,
+                git: git || git_force_pull,
+                git_force_pull,
+                git_ssh_key,
+            }),
+        }
     }
 }
 
