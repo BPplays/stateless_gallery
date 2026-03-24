@@ -668,6 +668,7 @@
         if (e.key === "Escape")                                   closeLightbox();
         if (e.key === "ArrowLeft"  || e.key === "h" || e.key === "a") navigate(-1);
         if (e.key === "ArrowRight" || e.key === "l" || e.key === "d") navigate(1);
+        if (e.key === "f") toggleFullscreen();
     });
 
     // ── Touch / swipe ─────────────────────────────────────────────────────────
@@ -742,6 +743,25 @@
         }
 
         return true
+    }
+
+    function toggleFullscreen() {
+        if (!isFullscreen()) {
+            enterFullscreen()
+        } else {
+            exitFullscreen()
+        }
+
+    }
+
+    function enterFullscreen() {
+        if (isFullscreen()) {
+            return
+        }
+
+        if (lightbox.requestFullscreen)            lightbox.requestFullscreen();
+        else if (lightbox.webkitRequestFullscreen) lightbox.webkitRequestFullscreen();
+
     }
 
     function exitFullscreen() {
@@ -833,12 +853,7 @@
 
         btn.addEventListener("mousedown", function (e) {
             e.stopPropagation();
-            if (!isFullscreen()) {
-                if (lightbox.requestFullscreen)            lightbox.requestFullscreen();
-                else if (lightbox.webkitRequestFullscreen) lightbox.webkitRequestFullscreen();
-            } else {
-                exitFullscreen()
-            }
+            toggleFullscreen();
         });
 
         function onFsChange() {
