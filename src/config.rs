@@ -103,6 +103,8 @@ pub struct PhotoDir {
     /// this session and written to `~/.ssh/known_hosts`.  A *changed* key
     /// (previously seen host, now different) is still always rejected.
     pub git_ssh_add_new_key: bool,
+
+    pub git_pat: Option<String>,
 }
 
 /// Private helper enum used only for deserialization.
@@ -122,6 +124,8 @@ enum PhotoDirDe {
         git_ssh_key: Option<PathBuf>,
         #[serde(default)]
         git_ssh_add_new_key: bool,
+        #[serde(default)]
+        git_pat: Option<String>,
     },
 }
 
@@ -134,14 +138,23 @@ impl<'de> Deserialize<'de> for PhotoDir {
                 git_force_pull: false,
                 git_ssh_key: None,
                 git_ssh_add_new_key: false,
+                git_pat: None,
             }),
-            PhotoDirDe::Full { dir, git, git_force_pull, git_ssh_key, git_ssh_add_new_key } =>
+            PhotoDirDe::Full {
+                dir,
+                git,
+                git_force_pull,
+                git_ssh_key,
+                git_ssh_add_new_key,
+                git_pat,
+            } =>
                 Ok(PhotoDir {
                     dir,
                     git: git || git_force_pull,
                     git_force_pull,
                     git_ssh_key,
                     git_ssh_add_new_key,
+                    git_pat,
                 }),
         }
     }

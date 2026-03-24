@@ -5,10 +5,7 @@ use git2::{
 };
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{
-	collections::{HashMap, HashSet},
-	path::{Path, PathBuf},
-	sync::Arc,
-	time::Duration,
+	collections::{HashMap, HashSet}, path::{Path, PathBuf}, sync::Arc, thread::sleep, time::Duration
 };
 use tokio::sync::{mpsc, RwLock};
 
@@ -19,12 +16,15 @@ use crate::{
 	gallery::ImageEntry,
 	ssh_verify::SshVerifier,
 };
+use std::time::{Instant};
 
 const DEBOUNCE: Duration = Duration::from_millis(500);
 
+const SYNC_COOLDOWN: Duration = Duration::from_secs(29);
+
 // Override at runtime: GALLERY_POLL_SECS=60 ./photo-gallery
 // Disable entirely:    GALLERY_POLL_SECS=0  ./photo-gallery
-const DEFAULT_POLL_SECS: u64 = 30;
+const DEFAULT_POLL_SECS: u64 = 5;
 
 pub type GalleryMap = Arc<RwLock<HashMap<String, Vec<ImageEntry>>>>;
 
@@ -103,7 +103,12 @@ fn git_sync_blocking(
 				// Non-SSH certificate (e.g. TLS); pass through.
 				return Ok(CertificateCheckStatus::CertificateOk);
 			};
-			let result = handle.block_on(verifier.verify(hostname, hostkey, add_new_key));
+			let result = handle.block_on(verifier.verify(
+				hostname,
+				photo_dir.git_pat.clone(),
+				hostkey,
+				add_new_key,
+			));
 			if result.is_ok() {
 				Ok(CertificateCheckStatus::CertificateOk)
 			} else {
@@ -123,9 +128,14 @@ fn git_sync_blocking(
 		let ssh_key = photo_dir.git_ssh_key.clone();
 		callbacks.credentials(move |_url, username_from_url, allowed| {
 			let username = username_from_url.unwrap_or("git");
+			// tracing::info!(username = username, "cred user");
 
 			// 1. Explicit key from config.
 			if allowed.is_ssh_key() {
+				// tracing::info!(
+				// 	key_path = ssh_key.clone().unwrap_or(PathBuf::default()).to_string_lossy().to_string(),
+				// 	"trying key from path",
+				// );
 				if let Some(ref key_path) = ssh_key {
 					let pub_path = {
 						let mut p = key_path.clone();
@@ -137,9 +147,24 @@ fn git_sync_blocking(
 						p
 					};
 					let pub_opt = if pub_path.exists() { Some(pub_path.as_path()) } else { None };
-					if let Ok(cred) = git2::Cred::ssh_key(username, pub_opt, key_path, None) {
-						return Ok(cred);
+					let result = git2::Cred::ssh_key(username, pub_opt, key_path, None);
+
+					match result {
+						Ok(cred) => {
+							// tracing::info!(
+							// 	"cred ok",
+							// );
+							return Ok(cred);
+						}
+						Err(e) => {
+							tracing::info!(
+								err = e.to_string(),
+								"cred err",
+							);
+						}
 					}
+
+
 				}
 			}
 
@@ -375,6 +400,8 @@ async fn run(config: Arc<Config>, gallery_images: GalleryMap) -> Result<()> {
 
 	let mut pending_slugs: HashSet<String> = HashSet::new();
 
+	let mut last_sync: HashMap<String, Instant> = HashMap::new();
+
 	loop {
 		tokio::select! {
 			event = rx.recv() => {
@@ -394,17 +421,35 @@ async fn run(config: Arc<Config>, gallery_images: GalleryMap) -> Result<()> {
 
 		if pending_slugs.is_empty() { continue; }
 
+		let now = Instant::now();
+
 		for slug in pending_slugs.drain() {
+			let mut do_git_sync = false;
 			let Some(gallery_cfg) = config.galleries.iter().find(|g| g.url == slug) else {
 				continue;
 			};
 
+			match last_sync.get(&slug) {
+				Some(&last) if now.duration_since(last) < SYNC_COOLDOWN => {
+					tracing::debug!(gallery = %slug, "git sync skipped: cooldown");
+				}
+				_ => {
+					tracing::debug!(gallery = %slug, "doing git sync");
+					do_git_sync = true;
+					last_sync.insert(slug.clone(), now); // record sync time now
+				}
+			}
+
 			// Git sync (fetch + verify + merge/reset) before scanning.
 			if let Some(dirs) = git_dirs.get(&slug) {
 				for photo_dir in dirs {
-					git_sync(photo_dir, &verifier).await;
+					if do_git_sync {
+						tracing::info!(dir = photo_dir.dir.to_str(), "git syncing");
+						git_sync(photo_dir, &verifier).await;
+					}
 				}
 			}
+
 
 			match gallery::scan_gallery(gallery_cfg) {
 				Ok(images) => {
@@ -427,6 +472,8 @@ async fn run(config: Arc<Config>, gallery_images: GalleryMap) -> Result<()> {
 				Err(e) => tracing::error!(gallery = %slug, "rescan failed: {e:#}"),
 			}
 		}
+		tracing::info!("tracing loop end");
+		sleep(Duration::from_secs(2));
 	}
 }
 

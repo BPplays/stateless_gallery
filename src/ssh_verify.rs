@@ -66,6 +66,7 @@ impl SshVerifier {
 	pub async fn verify(
 		&self,
 		hostname: &str,
+		git_pat: Option<String>,
 		hostkey: &CertHostkey<'_>,
 		add_new_key: bool,
 	) -> VerifyResult {
@@ -83,7 +84,7 @@ impl SshVerifier {
 		};
 
 		// ── 1. Platform API ───────────────────────────────────────────────────
-		match platform_api_verify(host, key_bytes).await {
+		match platform_api_verify(host, git_pat, key_bytes).await {
 			Some(true)  => { tracing::debug!(host, "git: host key verified via platform API"); return VerifyResult::Trusted; }
 			Some(false) => {
 				// tracing::warn!(host, "git: SECURITY — host key does not match platform API");
@@ -168,10 +169,14 @@ impl SshVerifier {
 ///   Some(true)  – key matches a key from the platform API
 ///   Some(false) – platform API returned keys but NONE matched (key changed)
 ///   None        – host is not a recognised platform or API call failed
-async fn platform_api_verify(host: &str, key_bytes: &[u8]) -> Option<bool> {
+async fn platform_api_verify(
+	host: &str,
+	pat: Option<String>,
+	key_bytes: &[u8],
+) -> Option<bool> {
 	// GitHub — documented, reliable
 	if host == "github.com" || host.ends_with(".github.com") {
-		return check_github_api(key_bytes).await.ok();
+		return check_github_api(key_bytes, pat).await.ok();
 	}
 
 	// GitLab.com — uses the same API endpoint as self-hosted GitLab
@@ -191,7 +196,7 @@ async fn platform_api_verify(host: &str, key_bytes: &[u8]) -> Option<bool> {
 }
 
 /// GitHub: GET https://api.github.com/meta → { ssh_keys: ["AAAA…", …] }
-async fn check_github_api(key_bytes: &[u8]) -> anyhow::Result<bool> {
+async fn check_github_api(key_bytes: &[u8], pat: Option<String>) -> anyhow::Result<bool> {
 	tracing::info!("trying github api");
 
 	let client = reqwest::Client::builder()
@@ -201,9 +206,12 @@ async fn check_github_api(key_bytes: &[u8]) -> anyhow::Result<bool> {
 
 	let resp: serde_json::Value = client
 		.get("https://api.github.com/meta")
+		.header("Authorization", format!("token {}", pat.unwrap_or("".to_string())))
 		.header("accept", "application/vnd.github+json")
 		.send().await?
 		.json().await?;
+
+	// tracing::info!(resp = resp.clone().to_string(), "got response");
 
 	let keys = resp["ssh_keys"].as_array()
 		.ok_or_else(|| anyhow::anyhow!("ssh_keys missing"))?;
