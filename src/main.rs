@@ -114,7 +114,7 @@ async fn main() -> Result<()> {
     });
 
     let app = Router::new()
-        // Favicon:      GET /favicon.ico
+        // Favicon:      GET /favicon.png
         .route("/favicon.png", get(handlers::serve_favicon))
         // Gallery index:  GET /{slug}?secret=...
         .route("/{slug}", get(handlers::gallery_index))
