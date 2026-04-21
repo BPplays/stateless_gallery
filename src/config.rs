@@ -1,9 +1,19 @@
 use serde::{Deserialize, Deserializer};
 use std::path::PathBuf;
 
+#[derive(Deserialize, Clone, Debug, Default)]
+pub struct GlobalConfig {
+    /// Path to the favicon PNG file.
+    pub favicon_png: Option<PathBuf>,
+}
+
 /// Top-level gallery configuration (YAML).
 #[derive(Deserialize, Clone, Debug)]
 pub struct Config {
+    /// Global settings.
+    #[serde(default)]
+    pub global: GlobalConfig,
+
     /// One or more named galleries, each served under its own URL slug.
     pub galleries: Vec<GalleryConfig>,
 
