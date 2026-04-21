@@ -114,6 +114,8 @@ async fn main() -> Result<()> {
     });
 
     let app = Router::new()
+        // Favicon:      GET /favicon.ico
+        .route("/favicon.png", get(handlers::serve_favicon))
         // Gallery index:  GET /{slug}?secret=...
         .route("/{slug}", get(handlers::gallery_index))
         // Thumbnail:      GET /{slug}/thumb/{encoded}?secret=...
@@ -121,6 +123,7 @@ async fn main() -> Result<()> {
         // Full-size:      GET /{slug}/full/{encoded}?secret=...
         .route("/{slug}/full/{encoded}", get(handlers::serve_full))
         .with_state(state);
+
 
     // ── Log all gallery URLs at startup ───────────────────────────────────────
     let addr: std::net::SocketAddr = config.bind.parse().with_context(|| {

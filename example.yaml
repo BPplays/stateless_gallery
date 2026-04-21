@@ -1,6 +1,9 @@
 # photo-gallery example configuration
 # Run with: photo-gallery -c example.yaml
 
+global:
+  favicon_png: "./favicon.png"
+
 network:
   dns:
     - group: "dot"

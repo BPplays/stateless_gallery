@@ -68,6 +68,17 @@ fn not_found() -> Response {
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
+/// Serve the favicon.
+pub async fn serve_favicon(
+    State(state): State<Arc<AppState>>,
+) -> Response {
+    if let Some(path) = &state.config.global.favicon_png {
+        serve_file(path).await
+    } else {
+        not_found()
+    }
+}
+
 /// Serve the gallery index page.
 pub async fn gallery_index(
     AxumPath(slug): AxumPath<String>,
