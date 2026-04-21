@@ -1,954 +1,954 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="icon" href="/favicon.png" type="image/png">
-        <title>__TITLE__</title>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="icon" href="/favicon.png" type="image/png">
+		<title>__TITLE__</title>
 
-        <!-- Image data embedded early so the preload script below can read it
-             without waiting for the body script to execute. -->
-        <script type="application/json" id="gallery-data">__IMAGES_JSON__</script>
+		<!-- Image data embedded early so the preload script below can read it
+			 without waiting for the body script to execute. -->
+		<script type="application/json" id="gallery-data">__IMAGES_JSON__</script>
 
-        <!-- If the page was opened with a hash (direct link to an image),
-             inject a high-priority preload immediately during HTML parse
-             to minimise LCP resource load delay. -->
-        <script>
-        (function () {
-            var hash = location.hash;
-            if (!hash) return;
-            try {
-                var name   = decodeURIComponent(hash.slice(1));
-                var images = JSON.parse(document.getElementById("gallery-data").textContent);
-                for (var i = 0; i < images.length; i++) {
-                    if (images[i].name === name) {
-                        var link = document.createElement("link");
-                        link.rel  = "preload";
-                        link.as   = "image";
-                        link.href = images[i].full;
-                        link.setAttribute("fetchpriority", "high");
-                        document.head.appendChild(link);
-                        break;
-                    }
-                }
-            } catch (e) {}
-        }());
-        </script>
+		<!-- If the page was opened with a hash (direct link to an image),
+			 inject a high-priority preload immediately during HTML parse
+			 to minimise LCP resource load delay. -->
+		<script>
+		(function () {
+			var hash = location.hash;
+			if (!hash) return;
+			try {
+				var name   = decodeURIComponent(hash.slice(1));
+				var images = JSON.parse(document.getElementById("gallery-data").textContent);
+				for (var i = 0; i < images.length; i++) {
+					if (images[i].name === name) {
+						var link = document.createElement("link");
+						link.rel  = "preload";
+						link.as   = "image";
+						link.href = images[i].full;
+						link.setAttribute("fetchpriority", "high");
+						document.head.appendChild(link);
+						break;
+					}
+				}
+			} catch (e) {}
+		}());
+		</script>
 
-        <!-- Fonts loaded async (media="print" trick) so they never block
-             the initial render. System fonts display immediately; Inter/Noto
-             swap in once the stylesheet arrives. -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="preload" as="style"
-              href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap">
-        <link rel="stylesheet" media="print"
-              href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap"
-              onload="this.media='all'">
-        <noscript>
-            <link rel="stylesheet"
-                  href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap">
-        </noscript>
+		<!-- Fonts loaded async (media="print" trick) so they never block
+			 the initial render. System fonts display immediately; Inter/Noto
+			 swap in once the stylesheet arrives. -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link rel="preload" as="style"
+			  href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap">
+		<link rel="stylesheet" media="print"
+			  href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap"
+			  onload="this.media='all'">
+		<noscript>
+			<link rel="stylesheet"
+				  href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap">
+		</noscript>
 
-        <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+		<style>
+		*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        :root {
-            --bg:      #0d0d0d;
-            --surface: #181818;
-            --border:  #2a2a2a;
-            --text:    #e2e2e2;
-            --muted:   #666;
-            --accent:  #fff;
-            --radius:  3px;
-            --gap:     3px;
-        }
+		:root {
+			--bg:      #0d0d0d;
+			--surface: #181818;
+			--border:  #2a2a2a;
+			--text:    #e2e2e2;
+			--muted:   #666;
+			--accent:  #fff;
+			--radius:  3px;
+			--gap:     3px;
+		}
 
-        html, body {
-            height: 100%;
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
+		html, body {
+			height: 100%;
+			background: var(--bg);
+			color: var(--text);
+			font-family: 'Inter', "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+			-webkit-font-smoothing: antialiased;
+		}
 
-        /* ── Header ─────────────────────────────────────────────── */
-        header {
-            display: flex; align-items: baseline; gap: 14px;
-            padding: 20px 24px 14px;
-            border-bottom: 1px solid var(--border);
-            position: sticky; top: 0;
-            background: var(--bg); z-index: 10;
-        }
-        header h1    { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; color: var(--accent); }
-        header .count { font-size: 0.8rem; color: var(--muted); }
+		/* ── Header ─────────────────────────────────────────────── */
+		header {
+			display: flex; align-items: baseline; gap: 14px;
+			padding: 20px 24px 14px;
+			border-bottom: 1px solid var(--border);
+			position: sticky; top: 0;
+			background: var(--bg); z-index: 10;
+		}
+		header h1    { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; color: var(--accent); }
+		header .count { font-size: 0.8rem; color: var(--muted); }
 
-        /* ── Gallery grid ────────────────────────────────────────── */
-        #gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: var(--gap); padding: var(--gap);
-        }
-        .thumb-item {
-            aspect-ratio: 1; overflow: hidden;
-            background: var(--surface); cursor: pointer;
-            position: relative; border-radius: var(--radius);
-        }
-        .thumb-item img {
-            width: 100%; height: 100%; object-fit: cover; display: block;
-            transition: transform .35s cubic-bezier(.25,.46,.45,.94), opacity .2s;
-        }
-        .thumb-item:hover img { transform: scale(1.055); opacity: .88; }
-        .thumb-item .label {
-            position: absolute; inset: auto 0 0 0;
-            padding: 28px 10px 10px;
-            background: linear-gradient(transparent, rgba(0,0,0,.72));
-            font-size: .72rem; color: rgba(255,255,255,.85);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            opacity: 0; transition: opacity .18s;
-            pointer-events: none;
-            border-radius: 0 0 var(--radius) var(--radius);
-        }
-        .thumb-item:hover .label { opacity: 1; }
-        .empty {
-            grid-column: 1/-1; text-align: center;
-            padding: 80px 20px; color: var(--muted); font-size: .95rem;
-        }
+		/* ── Gallery grid ────────────────────────────────────────── */
+		#gallery {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+			gap: var(--gap); padding: var(--gap);
+		}
+		.thumb-item {
+			aspect-ratio: 1; overflow: hidden;
+			background: var(--surface); cursor: pointer;
+			position: relative; border-radius: var(--radius);
+		}
+		.thumb-item img {
+			width: 100%; height: 100%; object-fit: cover; display: block;
+			transition: transform .35s cubic-bezier(.25,.46,.45,.94), opacity .2s;
+		}
+		.thumb-item:hover img { transform: scale(1.055); opacity: .88; }
+		.thumb-item .label {
+			position: absolute; inset: auto 0 0 0;
+			padding: 28px 10px 10px;
+			background: linear-gradient(transparent, rgba(0,0,0,.72));
+			font-size: .72rem; color: rgba(255,255,255,.85);
+			white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+			opacity: 0; transition: opacity .18s;
+			pointer-events: none;
+			border-radius: 0 0 var(--radius) var(--radius);
+		}
+		.thumb-item:hover .label { opacity: 1; }
+		.empty {
+			grid-column: 1/-1; text-align: center;
+			padding: 80px 20px; color: var(--muted); font-size: .95rem;
+		}
 
-        /* ── Lightbox ────────────────────────────────────────────── */
-        #lightbox {
-            display: none; position: fixed; inset: 0; z-index: 1000;
-            background: rgba(5,5,5,.97); overflow: hidden;
-        }
-        #lightbox.open { display: block; }
+		/* ── Lightbox ────────────────────────────────────────────── */
+		#lightbox {
+			display: none; position: fixed; inset: 0; z-index: 1000;
+			background: rgba(5,5,5,.97); overflow: hidden;
+		}
+		#lightbox.open { display: block; }
 
-        /* Stage: clips the track to one viewport width */
-        #lb-stage { position: absolute; inset: 0; overflow: hidden; }
+		/* Stage: clips the track to one viewport width */
+		#lb-stage { position: absolute; inset: 0; overflow: hidden; }
 
-        /* Three-slot track: [prev | curr | next]
-           300% wide so each slot = 100vw.
-           Default translateX(-33.333%) centres the middle slot.
-           will-change applied by JS only during active drag/animation. */
-        #lb-track {
-            display: flex; width: 300%; height: 100%;
-            transform: translateX(-33.333%);
-        }
-        .lb-slide {
-            width: 33.333%; height: 100%; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .lb-slide img {
-            max-width: 100%; max-height: 100%;
-            width: 100%; height: 100%;
-            object-fit: contain; display: block; border-radius: 2px;
-            user-select: none; -webkit-user-drag: none;
-        }
-        /* Shadow + fade only on the visible centre slot */
-        #lb-slide-curr img {
-            box-shadow: 0 8px 60px rgba(0,0,0,.7);
-            transition: opacity .15s ease;
-        }
-        #lb-slide-curr img.fading { opacity: 0; }
+		/* Three-slot track: [prev | curr | next]
+		   300% wide so each slot = 100vw.
+		   Default translateX(-33.333%) centres the middle slot.
+		   will-change applied by JS only during active drag/animation. */
+		#lb-track {
+			display: flex; width: 300%; height: 100%;
+			transform: translateX(-33.333%);
+		}
+		.lb-slide {
+			width: 33.333%; height: 100%; flex-shrink: 0;
+			display: flex; align-items: center; justify-content: center;
+		}
+		.lb-slide img {
+			max-width: 100%; max-height: 100%;
+			width: 100%; height: 100%;
+			object-fit: contain; display: block; border-radius: 2px;
+			user-select: none; -webkit-user-drag: none;
+		}
+		/* Shadow + fade only on the visible centre slot */
+		#lb-slide-curr img {
+			box-shadow: 0 8px 60px rgba(0,0,0,.7);
+			transition: opacity .15s ease;
+		}
+		#lb-slide-curr img.fading { opacity: 0; }
 
-        /* ── Shared button style ─────────────────────────────────── */
-        .lb-icon-btn {
-            width: 38px; height: 38px; border-radius: 50%;
-            border: 1px solid rgba(255,255,255,.14);
-            background: rgba(255,255,255,.07);
-            color: rgba(255,255,255,.65);
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: background .15s, color .15s, border-color .15s;
-            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-            text-decoration: none;
-        }
-        .lb-icon-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
-        .lb-icon-btn.active { color: #6ee7b7; border-color: #6ee7b7; }
+		/* ── Shared button style ─────────────────────────────────── */
+		.lb-icon-btn {
+			width: 38px; height: 38px; border-radius: 50%;
+			border: 1px solid rgba(255,255,255,.14);
+			background: rgba(255,255,255,.07);
+			color: rgba(255,255,255,.65);
+			cursor: pointer;
+			display: flex; align-items: center; justify-content: center;
+			transition: background .15s, color .15s, border-color .15s;
+			backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+			text-decoration: none;
+		}
+		.lb-icon-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
+		.lb-icon-btn.active { color: #6ee7b7; border-color: #6ee7b7; }
 
-        /* ── Top-left: fullscreen ────────────────────────────────── */
-        #lb-fullscreen {
-            position: absolute; top: 16px; left: 16px; z-index: 2;
-        }
-        #lb-fullscreen.unsupported { display: none; }
+		/* ── Top-left: fullscreen ────────────────────────────────── */
+		#lb-fullscreen {
+			position: absolute; top: 16px; left: 16px; z-index: 2;
+		}
+		#lb-fullscreen.unsupported { display: none; }
 
-        /* ── Top-right: share / download / close ─────────────────── */
-        #lb-topbar {
-            position: absolute; top: 16px; right: 16px;
-            display: flex; gap: 8px; align-items: center; z-index: 2;
-        }
+		/* ── Top-right: share / download / close ─────────────────── */
+		#lb-topbar {
+			position: absolute; top: 16px; right: 16px;
+			display: flex; gap: 8px; align-items: center; z-index: 2;
+		}
 
-        /* ── Nav arrows (desktop only) ───────────────────────────── */
-        .lb-nav-btn {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            width: 48px; height: 48px; border-radius: 50%;
-            border: 1px solid rgba(255,255,255,.14);
-            background: rgba(255,255,255,.07);
-            color: rgba(255,255,255,.75);
-            font-size: 1.3rem; cursor: pointer; line-height: 1;
-            display: flex; align-items: center; justify-content: center;
-            transition: background .15s, color .15s, border-color .15s;
-            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-            z-index: 2;
-        }
-        .lb-nav-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
-        #lb-prev { left: 16px; }
-        #lb-next { right: 16px; }
-        @media (pointer: coarse) { #lb-prev, #lb-next { display: none; } }
+		/* ── Nav arrows (desktop only) ───────────────────────────── */
+		.lb-nav-btn {
+			position: absolute; top: 50%; transform: translateY(-50%);
+			width: 48px; height: 48px; border-radius: 50%;
+			border: 1px solid rgba(255,255,255,.14);
+			background: rgba(255,255,255,.07);
+			color: rgba(255,255,255,.75);
+			font-size: 1.3rem; cursor: pointer; line-height: 1;
+			display: flex; align-items: center; justify-content: center;
+			transition: background .15s, color .15s, border-color .15s;
+			backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+			z-index: 2;
+		}
+		.lb-nav-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
+		#lb-prev { left: 16px; }
+		#lb-next { right: 16px; }
+		@media (pointer: coarse) { #lb-prev, #lb-next { display: none; } }
 
-        /* ── Caption bar ─────────────────────────────────────────── */
-        #lb-caption {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 14px 20px;
-            display: flex; align-items: baseline; gap: 10px;
-            background: linear-gradient(transparent, rgba(0,0,0,.55));
-            opacity: 0; z-index: 2;
-            pointer-events: none; transition: opacity .2s;
-        }
-        #lb-caption:hover { opacity: 1; }
-        #lb-name    { font-size: .82rem; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #lb-counter { font-size: .75rem; color: rgba(255,255,255,.35); white-space: nowrap; flex-shrink: 0; }
-        #lb-copy {
-            flex-shrink: 0; margin-left: auto; pointer-events: auto;
-            background: none; border: 1px solid rgba(255,255,255,.18);
-            border-radius: 5px; color: rgba(255,255,255,.45);
-            padding: 4px 8px; cursor: pointer;
-            display: flex; align-items: center; gap: 5px;
-            font-size: .72rem; font-family: inherit;
-            transition: background .15s, color .15s, border-color .15s;
-        }
-        #lb-copy:hover  { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35); }
-        #lb-copy.copied { color: #6ee7b7; border-color: #6ee7b7; }
+		/* ── Caption bar ─────────────────────────────────────────── */
+		#lb-caption {
+			position: absolute; bottom: 0; left: 0; right: 0;
+			padding: 14px 20px;
+			display: flex; align-items: baseline; gap: 10px;
+			background: linear-gradient(transparent, rgba(0,0,0,.55));
+			opacity: 0; z-index: 2;
+			pointer-events: none; transition: opacity .2s;
+		}
+		#lb-caption:hover { opacity: 1; }
+		#lb-name    { font-size: .82rem; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		#lb-counter { font-size: .75rem; color: rgba(255,255,255,.35); white-space: nowrap; flex-shrink: 0; }
+		#lb-copy {
+			flex-shrink: 0; margin-left: auto; pointer-events: auto;
+			background: none; border: 1px solid rgba(255,255,255,.18);
+			border-radius: 5px; color: rgba(255,255,255,.45);
+			padding: 4px 8px; cursor: pointer;
+			display: flex; align-items: center; gap: 5px;
+			font-size: .72rem; font-family: inherit;
+			transition: background .15s, color .15s, border-color .15s;
+		}
+		#lb-copy:hover  { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35); }
+		#lb-copy.copied { color: #6ee7b7; border-color: #6ee7b7; }
 
-        /* ── Loading spinner ─────────────────────────────────────── */
-        #lb-spinner {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%,-50%);
-            width: 36px; height: 36px;
-            border: 2px solid rgba(255,255,255,.12);
-            border-top-color: rgba(255,255,255,.55);
-            border-radius: 50%;
-            animation: spin .7s linear infinite;
-            opacity: 0; transition: opacity .2s;
-            pointer-events: none; z-index: 3;
-        }
-        #lb-spinner.visible { opacity: 1; }
-        @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+		/* ── Loading spinner ─────────────────────────────────────── */
+		#lb-spinner {
+			position: absolute; top: 50%; left: 50%;
+			transform: translate(-50%,-50%);
+			width: 36px; height: 36px;
+			border: 2px solid rgba(255,255,255,.12);
+			border-top-color: rgba(255,255,255,.55);
+			border-radius: 50%;
+			animation: spin .7s linear infinite;
+			opacity: 0; transition: opacity .2s;
+			pointer-events: none; z-index: 3;
+		}
+		#lb-spinner.visible { opacity: 1; }
+		@keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
 
-        /* ── Hot-reload toast ────────────────────────────────────── */
-        #reload-toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(40,40,40,.92); color: #e2e2e2;
-            font-size: .78rem; padding: 8px 16px; border-radius: 20px;
-            border: 1px solid rgba(255,255,255,.12);
-            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-            opacity: 0; transition: opacity .3s;
-            pointer-events: none; z-index: 2000; white-space: nowrap;
-        }
-        #reload-toast.show { opacity: 1; }
+		/* ── Hot-reload toast ────────────────────────────────────── */
+		#reload-toast {
+			position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+			background: rgba(40,40,40,.92); color: #e2e2e2;
+			font-size: .78rem; padding: 8px 16px; border-radius: 20px;
+			border: 1px solid rgba(255,255,255,.12);
+			backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+			opacity: 0; transition: opacity .3s;
+			pointer-events: none; z-index: 2000; white-space: nowrap;
+		}
+		#reload-toast.show { opacity: 1; }
 
-        @media (max-width: 480px) {
-            #gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-        }
-        </style>
-    </head>
-    <body>
+		@media (max-width: 480px) {
+			#gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+		}
+		</style>
+	</head>
+	<body>
 
-        <header>
-            <h1>__TITLE__</h1>
-            <span class="count" id="js-count">__COUNT__</span>
-        </header>
+		<header>
+			<h1>__TITLE__</h1>
+			<span class="count" id="js-count">__COUNT__</span>
+		</header>
 
-        <div id="gallery" role="list"></div>
+		<div id="gallery" role="list"></div>
 
-        <div id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
-            <div id="lb-stage">
-                <div id="lb-track">
-                    <div class="lb-slide" id="lb-slide-prev"><img id="lb-img-prev" src="" alt=""></div>
-                    <div class="lb-slide" id="lb-slide-curr"><img id="lb-img-curr" src="" alt=""></div>
-                    <div class="lb-slide" id="lb-slide-next"><img id="lb-img-next" src="" alt=""></div>
-                </div>
-            </div>
-            <div id="lb-spinner" aria-hidden="true"></div>
+		<div id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+			<div id="lb-stage">
+				<div id="lb-track">
+					<div class="lb-slide" id="lb-slide-prev"><img id="lb-img-prev" src="" alt=""></div>
+					<div class="lb-slide" id="lb-slide-curr"><img id="lb-img-curr" src="" alt=""></div>
+					<div class="lb-slide" id="lb-slide-next"><img id="lb-img-next" src="" alt=""></div>
+				</div>
+			</div>
+			<div id="lb-spinner" aria-hidden="true"></div>
 
-            <!-- Top-left: fullscreen -->
-            <button class="lb-icon-btn" id="lb-fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">
-                <svg id="lb-fs-enter" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-                <svg id="lb-fs-exit" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
-            </button>
+			<!-- Top-left: fullscreen -->
+			<button class="lb-icon-btn" id="lb-fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">
+				<svg id="lb-fs-enter" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+				<svg id="lb-fs-exit" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+			</button>
 
-            <!-- Top-right: share / download / close -->
-            <div id="lb-topbar">
-                <button class="lb-icon-btn" id="lb-share" aria-label="Share" title="Share">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                </button>
-                <a class="lb-icon-btn" id="lb-download" aria-label="Download" title="Download" download>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                </a>
-                <button class="lb-icon-btn" id="lb-close" aria-label="Close">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>
+			<!-- Top-right: share / download / close -->
+			<div id="lb-topbar">
+				<button class="lb-icon-btn" id="lb-share" aria-label="Share" title="Share">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+				</button>
+				<a class="lb-icon-btn" id="lb-download" aria-label="Download" title="Download" download>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+				</a>
+				<button class="lb-icon-btn" id="lb-close" aria-label="Close">
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+				</button>
+			</div>
 
-            <!-- Nav arrows (hidden on touch devices via CSS) -->
-            <button class="lb-nav-btn" id="lb-prev" aria-label="Previous image">&#8249;</button>
-            <button class="lb-nav-btn" id="lb-next" aria-label="Next image">&#8250;</button>
+			<!-- Nav arrows (hidden on touch devices via CSS) -->
+			<button class="lb-nav-btn" id="lb-prev" aria-label="Previous image">&#8249;</button>
+			<button class="lb-nav-btn" id="lb-next" aria-label="Next image">&#8250;</button>
 
-            <!-- Caption + copy-link -->
-            <div id="lb-caption" aria-live="polite">
-                <span id="lb-name"></span>
-                <span id="lb-counter"></span>
-                <button id="lb-copy" title="Copy link" aria-label="Copy link to this image">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                </button>
-            </div>
-        </div>
+			<!-- Caption + copy-link -->
+			<div id="lb-caption" aria-live="polite">
+				<span id="lb-name"></span>
+				<span id="lb-counter"></span>
+				<button id="lb-copy" title="Copy link" aria-label="Copy link to this image">
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+				</button>
+			</div>
+		</div>
 
-        <div id="reload-toast" aria-live="polite"></div>
+		<div id="reload-toast" aria-live="polite"></div>
 
-        <script>
+		<script>
 (function () {
-    "use strict";
-
-    // ── Data (server-injected) ────────────────────────────────────────────────
-    var IMAGES = __IMAGES_JSON__;
-
-    // ── Config ────────────────────────────────────────────────────────────────
-    //
-    // SIDE_SLOT_THUMBS
-    //   true  → Only one full-res image is ever in-flight at a time: the
-    //            centre slot. Side slots show the thumbnail immediately and
-    //            nothing else — no background full-res fetches, no preloading.
-    //            Full-res for the next image loads only after you navigate to it.
-    //            Best for metered connections or large image files.
-    //
-    //   false → Side slots load full-res eagerly in the background so swipe-to
-    //            is instant with no spinner. Uses more bandwidth since full-res
-    //            is fetched for images you may not end up viewing.
-    var SIDE_SLOT_THUMBS = true;
-
-    // ── DOM refs ──────────────────────────────────────────────────────────────
-    var gallery    = document.getElementById("gallery");
-    var lightbox   = document.getElementById("lightbox");
-    var lbTrack    = document.getElementById("lb-track");
-    var lbImgPrev  = document.getElementById("lb-img-prev");
-    var lbImgCurr  = document.getElementById("lb-img-curr");
-    var lbImgNext  = document.getElementById("lb-img-next");
-    var lbSpinner  = document.getElementById("lb-spinner");
-    var lbName     = document.getElementById("lb-name");
-    var lbCounter  = document.getElementById("lb-counter");
-    var countEl    = document.getElementById("js-count");
-    var reloadToast = document.getElementById("reload-toast");
-    var lbDownload = document.getElementById("lb-download");
-    var lbShare    = document.getElementById("lb-share");
-
-    // ── Grid ─────────────────────────────────────────────────────────────────
-    function buildGrid(images) {
-        gallery.innerHTML = "";
-        if (images.length === 0) {
-            gallery.innerHTML = '<p class="empty">No images found. Check that <code>photo_dirs</code> in your config points to a directory with supported image files.</p>';
-            return;
-        }
-        images.forEach(function (img, i) {
-            var item  = document.createElement("div");
-            item.className = "thumb-item";
-            item.setAttribute("role", "listitem");
-            item.setAttribute("tabindex", "0");
-            item.setAttribute("aria-label", img.name);
-
-            var el = document.createElement("img");
-            el.src = img.thumb; el.alt = img.name;
-            el.loading = "lazy"; el.decoding = "async";
-
-            var label = document.createElement("div");
-            label.className = "label";
-            label.textContent = img.name;
-
-            item.appendChild(el);
-            item.appendChild(label);
-
-            (function (idx) {
-                function open() { openLightbox(idx); }
-                item.addEventListener("mousedown", open);
-                item.addEventListener("keydown", function (e) {
-                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
-                });
-            }(i));
-
-            gallery.appendChild(item);
-        });
-    }
-
-    // ── Image fetcher ─────────────────────────────────────────────────────────
-    //
-    // fetchImg(url, onDone, onFail)
-    //   Unified fetch+decode pipeline with request deduplication.
-    //   • Returns cached result immediately if available.
-    //   • Piggybacks callbacks onto an existing in-flight request for the same
-    //     URL rather than starting a duplicate network request.
-    //   • Always waits for onload before calling decode() — calling decode()
-    //     on an unloaded Image rejects immediately on iOS Safari, which would
-    //     cache a broken element.
-    var imgCache  = new Map(); // url → decoded Image element
-    var imgFlight = new Map(); // url → { img, cbs: [{onDone, onFail}] }
-
-    function fetchImg(url, onDone, onFail) {
-        // Cache hit: return immediately.
-        if (imgCache.has(url)) { onDone(imgCache.get(url)); return; }
-
-        // In-flight: piggyback onto existing request.
-        if (imgFlight.has(url)) {
-            imgFlight.get(url).cbs.push({ onDone: onDone, onFail: onFail });
-            return;
-        }
-
-        // New fetch.
-        var img   = new Image();
-        var entry = { img: img, cbs: [{ onDone: onDone, onFail: onFail }] };
-        imgFlight.set(url, entry);
-
-        img.onload = function () {
-            imgFlight.delete(url);
-            function settle() {
-                imgCache.set(url, img);
-                entry.cbs.forEach(function (cb) { cb.onDone(img); });
-            }
-            // decode() pre-warms the GPU texture so the image paints without
-            // a compositor stall. Must be after onload (iOS Safari fix).
-            if (typeof img.decode === "function") {
-                img.decode().catch(function () {}).finally(settle);
-            } else {
-                settle();
-            }
-        };
-        img.onerror = function () {
-            imgFlight.delete(url);
-            entry.cbs.forEach(function (cb) { cb.onFail(); });
-        };
-        img.src = url;
-    }
-
-    // Warm the cache without updating any slot.
-    function prefetch(url) { fetchImg(url, function () {}, function () {}); }
-
-    // Prefetch full-res for ±2 neighbors so rapid navigation is instant.
-    // When SIDE_SLOT_THUMBS is on, full-res is only ever loaded for the
-    // centre slot, so we skip prefetching here entirely.
-    function preloadAdjacent(index) {
-        if (SIDE_SLOT_THUMBS) return;
-        var n = IMAGES.length;
-        if (n <= 1) return;
-        for (var d = 1; d <= 2; d++) {
-            prefetch(IMAGES[((index + d) % n + n) % n].full);
-            prefetch(IMAGES[((index - d) % n + n) % n].full);
-        }
-    }
-
-    // ── Centre slot loading ───────────────────────────────────────────────────
-    //
-    // Shows the thumbnail immediately (usually a near-instant HTTP cache hit
-    // since the grid already loaded it), then upgrades to full-res when decoded.
-    // The spinner indicates the full-res is still loading.
-    //
-    // loadGen is incremented each time a new centre load starts; async
-    // callbacks check their captured generation and bail if superseded.
-    var loadGen = 0;
-
-    function loadCentre(imgData) {
-        var gen = ++loadGen;
-
-        // Full-res already decoded and cached: display immediately, no spinner.
-        if (imgCache.has(imgData.full)) {
-            lbImgCurr.src = imgCache.get(imgData.full).src;
-            lbImgCurr.alt = imgData.name;
-            lbImgCurr.classList.remove("fading");
-            lbSpinner.classList.remove("visible");
-            return;
-        }
-
-        // Show thumbnail while full-res is fetching.
-        // Avoid a redundant assignment if the slot already shows our thumbnail
-        // (e.g. it just became centre from a side slot).
-        var thumbAbs = new URL(imgData.thumb, location.href).href;
-        if (lbImgCurr.src !== thumbAbs) {
-            lbImgCurr.src = imgData.thumb;
-            lbImgCurr.alt = imgData.name;
-        }
-        lbImgCurr.classList.remove("fading");
-        lbSpinner.classList.add("visible");
-
-        fetchImg(imgData.full,
-            function (imgEl) {
-                if (gen !== loadGen) return; // superseded
-                lbImgCurr.src = imgEl.src;
-                lbImgCurr.alt = imgData.name;
-                lbSpinner.classList.remove("visible");
-            },
-            function () {
-                if (gen !== loadGen) return;
-                lbSpinner.classList.remove("visible");
-            }
-        );
-    }
-
-    // ── Side slot loading ─────────────────────────────────────────────────────
-    //
-    // Side slots always show the thumbnail immediately (no wait, no spinner).
-    // genRef is a {v: Number} object — incrementing genRef.v cancels any
-    // pending upgrade for this slot.
-    //
-    // When SIDE_SLOT_THUMBS = true:
-    //   Shows thumbnail only. No full-res fetch of any kind — not even a
-    //   background warm. Full-res is requested by loadCentre() only after
-    //   the user navigates to this slot.
-    //
-    // When SIDE_SLOT_THUMBS = false:
-    //   Also upgrades the slot src to full-res when the fetch completes,
-    //   so swipe-to is instant with no upgrade delay.
-
-    var prevGen = { v: 0 };
-    var nextGen = { v: 0 };
-
-    function loadSide(slotEl, genRef, imgData) {
-        if (!imgData) { slotEl.src = ""; slotEl.alt = ""; return; }
-        var gen = ++genRef.v;
-
-        // Full-res already cached: show it directly (regardless of mode).
-        if (imgCache.has(imgData.full)) {
-            slotEl.src = imgCache.get(imgData.full).src;
-            slotEl.alt = imgData.name;
-            return;
-        }
-
-        // Show thumbnail immediately.
-        slotEl.src = imgData.thumb;
-        slotEl.alt = imgData.name;
-
-        if (SIDE_SLOT_THUMBS) {
-            // Thumb-only mode: show the thumbnail and do nothing else.
-            // Full-res will be fetched by loadCentre() only when this slot
-            // becomes the active centre — no background full-res fetches.
-        } else {
-            // Upgrade slot to full-res when decoded.
-            var capturedEl  = slotEl;
-            var capturedRef = genRef;
-            var capturedGen = gen;
-            fetchImg(imgData.full,
-                function (imgEl) {
-                    if (capturedGen !== capturedRef.v) return; // slot was reassigned
-                    capturedEl.src = imgEl.src;
-                },
-                function () {}
-            );
-        }
-    }
-
-    // Populate all three slots for a given centre index.
-    // Side slots are deferred one rAF so centre gets first priority on
-    // network connections and decode resources.
-    function loadAllSlots(index) {
-        var n = IMAGES.length;
-        lbName.textContent    = IMAGES[index].name;
-        lbCounter.textContent = "(" + (index + 1) + "\u202f/\u202f" + n + ")";
-
-        loadCentre(IMAGES[index]);
-
-        if (n > 1) {
-            requestAnimationFrame(function () {
-                loadSide(lbImgPrev, prevGen, IMAGES[(index - 1 + n) % n]);
-                loadSide(lbImgNext, nextGen, IMAGES[(index + 1) % n]);
-            });
-        }
-    }
-
-    // ── URL hash deep-linking ─────────────────────────────────────────────────
-    function setHashForIndex(index) {
-        var name = IMAGES[index] ? IMAGES[index].name : "";
-        if (name) history.replaceState(null, "", "#" + encodeURIComponent(name));
-    }
-    function clearHash() {
-        history.replaceState(null, "", location.pathname + location.search);
-    }
-    function indexFromHash() {
-        var hash = decodeURIComponent(location.hash.slice(1));
-        if (!hash) return -1;
-        return IMAGES.findIndex(function (img) { return img.name === hash; });
-    }
-
-    // ── Lightbox state ────────────────────────────────────────────────────────
-    var current = 0;
-
-    function updateTopbar(index) {
-        var img = IMAGES[index];
-        if (!img) return;
-        lbDownload.href = img.full;
-        lbDownload.setAttribute("download", img.name);
-    }
-
-    function openLightbox(index) {
-        current = index;
-        lightbox.classList.add("open");
-        document.body.style.overflow = "hidden";
-        loadAllSlots(current);
-        setHashForIndex(current);
-        updateTopbar(current);
-        preloadAdjacent(current);
-    }
-
-    function closeLightbox() {
-        lightbox.classList.remove("open");
-        document.body.style.overflow = "";
-        clearHash();
-        loadGen++; // cancel any in-flight centre-slot load
-        lbSpinner.classList.remove("visible");
-        lbImgCurr.classList.remove("fading");
-
-        exitFullscreen()
-    }
-
-    function navigate(delta) {
-        if (IMAGES.length === 0 || swipeAnimating) return;
-        commitSwipe(delta);
-    }
-
-    // ── Open from hash on page load ───────────────────────────────────────────
-    (function () {
-        var i = indexFromHash();
-        if (i >= 0) {
-            openLightbox(i);
-            // Defer grid build so it doesn't compete with the LCP image fetch.
-            if (typeof requestIdleCallback === "function") {
-                requestIdleCallback(function () { buildGrid(IMAGES); }, { timeout: 2000 });
-            } else {
-                setTimeout(function () { buildGrid(IMAGES); }, 200);
-            }
-        } else {
-            buildGrid(IMAGES);
-        }
-    }());
-
-    // ── Browser back/forward ──────────────────────────────────────────────────
-    window.addEventListener("hashchange", function () {
-        var i = indexFromHash();
-        if (i >= 0) {
-            if (!lightbox.classList.contains("open")) {
-                openLightbox(i);
-            } else {
-                current = i;
-                loadAllSlots(i);
-                updateTopbar(i);
-                preloadAdjacent(i);
-            }
-        } else if (lightbox.classList.contains("open")) {
-            lightbox.classList.remove("open");
-            document.body.style.overflow = "";
-            loadGen++;
-        }
-    });
-
-    // ── Button controls ───────────────────────────────────────────────────────
-    document.getElementById("lb-prev").addEventListener("mousedown", function () {
-        navigate(-1);
-    });
-    document.getElementById("lb-next").addEventListener("mousedown", function () {
-        navigate(1);
-    });
-    document.getElementById("lb-close").addEventListener("mousedown", function () {
-        closeLightbox()
-    });
-
-    lightbox.addEventListener("mousedown", function (e) {
-        var t = e.target;
-        if (t === lightbox || t.id === "lb-stage" || t.id === "lb-track" || t.classList.contains("lb-slide")) {
-            closeLightbox();
-        }
-    });
-
-    // ── Keyboard ──────────────────────────────────────────────────────────────
-    document.addEventListener("keydown", function (e) {
-        if (!lightbox.classList.contains("open")) return;
-        if (e.key === "Escape")                                   closeLightbox();
-        if (e.key === "ArrowLeft"  || e.key === "h" || e.key === "a") navigate(-1);
-        if (e.key === "ArrowRight" || e.key === "l" || e.key === "d") navigate(1);
-        if (e.key === "f") toggleFullscreen();
-    });
-
-    // ── Touch / swipe ─────────────────────────────────────────────────────────
-    var touchStartX = 0, touchStartY = 0, touchStartTime = 0;
-    var dragActive    = false;
-    var swipeAnimating = false;
-    var SWIPE_MIN_DIST  = 30;   // px
-    var SWIPE_MIN_VEL   = 0.2;  // px/ms
-    var SWIPE_AXIS_LOCK = 1.5;
-    var ANIM_MS         = 280;
-
-    function setTrackX(extraPx) {
-        lbTrack.style.transform = extraPx === 0
-            ? "translateX(-33.333%)"
-            : "translateX(calc(-33.333% + " + extraPx + "px))";
-    }
-
-    lightbox.addEventListener("touchstart", function (e) {
-        if (swipeAnimating || e.touches.length !== 1) return;
-        if (e.target.closest("#lb-topbar") || e.target.closest("#lb-caption") || e.target.closest("#lb-fullscreen")) return;
-        touchStartX    = e.touches[0].clientX;
-        touchStartY    = e.touches[0].clientY;
-        touchStartTime = Date.now();
-        dragActive     = true;
-        lbTrack.style.willChange  = "transform";
-        lbTrack.style.transition  = "none";
-    }, { passive: true });
-
-    lightbox.addEventListener("touchmove", function (e) {
-        if (!dragActive || e.touches.length !== 1) return;
-        var dx = e.touches[0].clientX - touchStartX;
-        var dy = e.touches[0].clientY - touchStartY;
-        if (Math.abs(dy) > Math.abs(dx) * SWIPE_AXIS_LOCK && Math.abs(dy) > 10) {
-            dragActive = false;
-            lbTrack.style.willChange = "";
-            lbTrack.style.transition = "";
-            setTrackX(0);
-            return;
-        }
-        if (IMAGES.length > 1) setTrackX(dx);
-    }, { passive: true });
-
-    lightbox.addEventListener("touchend", function (e) {
-        if (!dragActive) return;
-        dragActive = false;
-        var dx      = e.changedTouches[0].clientX - touchStartX;
-        var dy      = e.changedTouches[0].clientY - touchStartY;
-        var elapsed = Date.now() - touchStartTime;
-        var vel     = Math.abs(dx) / elapsed;
-        var isHoriz = Math.abs(dx) > Math.abs(dy) * SWIPE_AXIS_LOCK;
-        var isSwipe = isHoriz && (Math.abs(dx) > SWIPE_MIN_DIST || vel > SWIPE_MIN_VEL);
-        if (isSwipe && IMAGES.length > 1) {
-            commitSwipe(dx < 0 ? 1 : -1);
-        } else {
-            lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
-            setTrackX(0);
-            setTimeout(function () { lbTrack.style.transition = ""; lbTrack.style.willChange = ""; }, ANIM_MS + 10);
-        }
-    }, { passive: true });
-
-    lightbox.addEventListener("touchcancel", function () {
-        if (!dragActive) return;
-        dragActive = false;
-        lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
-        setTrackX(0);
-        setTimeout(function () { lbTrack.style.transition = ""; lbTrack.style.willChange = ""; }, ANIM_MS + 10);
-    }, { passive: true });
-
-    function isFullscreen() {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-            return false
-        }
-
-        return true
-    }
-
-    function toggleFullscreen() {
-        if (!isFullscreen()) {
-            enterFullscreen()
-        } else {
-            exitFullscreen()
-        }
-
-    }
-
-    function enterFullscreen() {
-        if (isFullscreen()) {
-            return
-        }
-
-        if (lightbox.requestFullscreen)            lightbox.requestFullscreen();
-        else if (lightbox.webkitRequestFullscreen) lightbox.webkitRequestFullscreen();
-
-    }
-
-    function exitFullscreen() {
-        if (!isFullscreen()) {
-            return
-        }
-
-        if (document.exitFullscreen)              document.exitFullscreen();
-        else if (document.webkitExitFullscreen)   document.webkitExitFullscreen();
-    }
-
-    // ── Swipe commit ──────────────────────────────────────────────────────────
-    //
-    // Animates the track to the arriving slot, then reshuffles the three img
-    // srcs so we can snap back to the centre without any network hit.
-    // After the reshuffle:
-    //   • loadCentre() upgrades the new centre slot to full-res (instant if
-    //     preloading worked; otherwise shows thumb with spinner).
-    //   • loadSide() populates the newly vacated far slot.
-    function commitSwipe(direction) {
-        swipeAnimating = true;
-        var n = IMAGES.length;
-
-        lbTrack.style.willChange = "transform";
-        lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
-        lbTrack.style.transform  = direction > 0 ? "translateX(-66.666%)" : "translateX(0%)";
-
-        setTimeout(function () {
-            current = ((current + direction) % n + n) % n;
-            lbTrack.style.transition = "none";
-
-            // Reshuffle slot srcs. The arriving slot src (thumb or full-res)
-            // becomes the new centre src; the vacated slot is cleared.
-            if (direction > 0) {
-                lbImgPrev.src = lbImgCurr.src;  lbImgPrev.alt = lbImgCurr.alt;
-                lbImgCurr.src = lbImgNext.src;  lbImgCurr.alt = lbImgNext.alt;
-                lbImgNext.src = "";              lbImgNext.alt = "";
-            } else {
-                lbImgNext.src = lbImgCurr.src;  lbImgNext.alt = lbImgCurr.alt;
-                lbImgCurr.src = lbImgPrev.src;  lbImgCurr.alt = lbImgPrev.alt;
-                lbImgPrev.src = "";              lbImgPrev.alt = "";
-            }
-
-            setTrackX(0);
-
-            lbName.textContent    = IMAGES[current].name;
-            lbCounter.textContent = "(" + (current + 1) + "\u202f/\u202f" + n + ")";
-            setHashForIndex(current);
-            updateTopbar(current);
-
-            // Upgrade the new centre slot to full-res.
-            // This is usually instant when preloading has run ahead.
-            loadCentre(IMAGES[current]);
-
-            requestAnimationFrame(function () {
-                lbTrack.style.transition = "";
-                lbTrack.style.willChange = "";
-                swipeAnimating = false;
-            });
-
-            // Load the newly vacated far slot and extend the preload window,
-            // deferred until idle to avoid competing with the repaint.
-            var farSlotEl  = direction > 0 ? lbImgNext : lbImgPrev;
-            var farSlotGen = direction > 0 ? nextGen   : prevGen;
-            var farIdx     = direction > 0 ? (current + 1) % n : (current - 1 + n) % n;
-
-            var doIdle = function () {
-                loadSide(farSlotEl, farSlotGen, IMAGES[farIdx]);
-                preloadAdjacent(current);
-            };
-            if (typeof requestIdleCallback === "function") {
-                requestIdleCallback(doIdle, { timeout: 500 });
-            } else {
-                setTimeout(doIdle, 100);
-            }
-        }, ANIM_MS + 10);
-    }
-
-    // ── Fullscreen ────────────────────────────────────────────────────────────
-    (function () {
-        var btn      = document.getElementById("lb-fullscreen");
-        var iconEnter = document.getElementById("lb-fs-enter");
-        var iconExit  = document.getElementById("lb-fs-exit");
-
-        if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) {
-            btn.classList.add("unsupported");
-            return;
-        }
-
-        btn.addEventListener("mousedown", function (e) {
-            e.stopPropagation();
-            toggleFullscreen();
-        });
-
-        function onFsChange() {
-            var active = !!(document.fullscreenElement || document.webkitFullscreenElement);
-            iconEnter.style.display = active ? "none" : "";
-            iconExit.style.display  = active ? ""     : "none";
-            btn.setAttribute("aria-label", active ? "Exit fullscreen" : "Toggle fullscreen");
-        }
-        document.addEventListener("fullscreenchange",       onFsChange);
-        document.addEventListener("webkitfullscreenchange", onFsChange);
-    }());
-
-    // ── Share / copy helpers ──────────────────────────────────────────────────
-    function copyToClipboard(text, onSuccess) {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(onSuccess).catch(function () {
-                fallbackCopy(text, onSuccess);
-            });
-        } else {
-            fallbackCopy(text, onSuccess);
-        }
-    }
-    function fallbackCopy(text, onSuccess) {
-        try {
-            var tmp = document.createElement("input");
-            tmp.value = text;
-            document.body.appendChild(tmp);
-            tmp.select();
-            document.execCommand("copy");
-            document.body.removeChild(tmp);
-            onSuccess();
-        } catch (e) {}
-    }
-
-    // ── Share button ──────────────────────────────────────────────────────────
-    lbShare.addEventListener("mousedown", function (e) {
-        e.stopPropagation();
-        var img = IMAGES[current];
-        if (!img) return;
-        var url = location.href;
-        if (navigator.share) {
-            navigator.share({ title: img.name, url: url }).catch(function () {});
-            return;
-        }
-        copyToClipboard(url, function () {
-            lbShare.classList.add("active");
-            setTimeout(function () { lbShare.classList.remove("active"); }, 1800);
-        });
-    });
-
-    // ── Download button ───────────────────────────────────────────────────────
-    lbDownload.addEventListener("mousedown", function (e) { e.stopPropagation(); });
-
-    // ── Copy-link button ──────────────────────────────────────────────────────
-    document.getElementById("lb-copy").addEventListener("mousedown", function (e) {
-        e.stopPropagation();
-        var btn = this;
-        copyToClipboard(location.href, function () {
-            btn.classList.add("copied");
-            setTimeout(function () { btn.classList.remove("copied"); }, 1800);
-        });
-    });
-
-    // ── Hot-reload polling ────────────────────────────────────────────────────
-    // Polls the page every 10 s and rebuilds the grid if the image count changed.
-    (function () {
-        var INTERVAL = 10000;
-        function poll() {
-            fetch(location.href, { cache: "no-store" })
-                .then(function (r) { return r.text(); })
-                .then(function (html) {
-                    var match = html.match(/var IMAGES = (\[[\s\S]*?\]);/);
-                    if (!match) return;
-                    var fresh;
-                    try { fresh = JSON.parse(match[1]); } catch (e) { return; }
-                    if (fresh.length === IMAGES.length) return;
-                    var delta = fresh.length - IMAGES.length;
-                    var msg = delta > 0
-                        ? "+" + delta + " new photo" + (delta === 1 ? "" : "s")
-                        : Math.abs(delta) + " photo" + (Math.abs(delta) === 1 ? "" : "s") + " removed";
-                    IMAGES = fresh;
-                    buildGrid(IMAGES);
-                    countEl.textContent = fresh.length + " photo" + (fresh.length === 1 ? "" : "s");
-                    if (lightbox.classList.contains("open") && current >= IMAGES.length) closeLightbox();
-                    reloadToast.textContent = msg;
-                    reloadToast.classList.add("show");
-                    setTimeout(function () { reloadToast.classList.remove("show"); }, 3000);
-                })
-                .catch(function () {});
-        }
-        setInterval(poll, INTERVAL);
-    }());
+	"use strict";
+
+	// ── Data (server-injected) ────────────────────────────────────────────────
+	var IMAGES = __IMAGES_JSON__;
+
+	// ── Config ────────────────────────────────────────────────────────────────
+	//
+	// SIDE_SLOT_THUMBS
+	//   true  → Only one full-res image is ever in-flight at a time: the
+	//            centre slot. Side slots show the thumbnail immediately and
+	//            nothing else — no background full-res fetches, no preloading.
+	//            Full-res for the next image loads only after you navigate to it.
+	//            Best for metered connections or large image files.
+	//
+	//   false → Side slots load full-res eagerly in the background so swipe-to
+	//            is instant with no spinner. Uses more bandwidth since full-res
+	//            is fetched for images you may not end up viewing.
+	var SIDE_SLOT_THUMBS = true;
+
+	// ── DOM refs ──────────────────────────────────────────────────────────────
+	var gallery    = document.getElementById("gallery");
+	var lightbox   = document.getElementById("lightbox");
+	var lbTrack    = document.getElementById("lb-track");
+	var lbImgPrev  = document.getElementById("lb-img-prev");
+	var lbImgCurr  = document.getElementById("lb-img-curr");
+	var lbImgNext  = document.getElementById("lb-img-next");
+	var lbSpinner  = document.getElementById("lb-spinner");
+	var lbName     = document.getElementById("lb-name");
+	var lbCounter  = document.getElementById("lb-counter");
+	var countEl    = document.getElementById("js-count");
+	var reloadToast = document.getElementById("reload-toast");
+	var lbDownload = document.getElementById("lb-download");
+	var lbShare    = document.getElementById("lb-share");
+
+	// ── Grid ─────────────────────────────────────────────────────────────────
+	function buildGrid(images) {
+		gallery.innerHTML = "";
+		if (images.length === 0) {
+			gallery.innerHTML = '<p class="empty">No images found. Check that <code>photo_dirs</code> in your config points to a directory with supported image files.</p>';
+			return;
+		}
+		images.forEach(function (img, i) {
+			var item  = document.createElement("div");
+			item.className = "thumb-item";
+			item.setAttribute("role", "listitem");
+			item.setAttribute("tabindex", "0");
+			item.setAttribute("aria-label", img.name);
+
+			var el = document.createElement("img");
+			el.src = img.thumb; el.alt = img.name;
+			el.loading = "lazy"; el.decoding = "async";
+
+			var label = document.createElement("div");
+			label.className = "label";
+			label.textContent = img.name;
+
+			item.appendChild(el);
+			item.appendChild(label);
+
+			(function (idx) {
+				function open() { openLightbox(idx); }
+				item.addEventListener("mousedown", open);
+				item.addEventListener("keydown", function (e) {
+					if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+				});
+			}(i));
+
+			gallery.appendChild(item);
+		});
+	}
+
+	// ── Image fetcher ─────────────────────────────────────────────────────────
+	//
+	// fetchImg(url, onDone, onFail)
+	//   Unified fetch+decode pipeline with request deduplication.
+	//   • Returns cached result immediately if available.
+	//   • Piggybacks callbacks onto an existing in-flight request for the same
+	//     URL rather than starting a duplicate network request.
+	//   • Always waits for onload before calling decode() — calling decode()
+	//     on an unloaded Image rejects immediately on iOS Safari, which would
+	//     cache a broken element.
+	var imgCache  = new Map(); // url → decoded Image element
+	var imgFlight = new Map(); // url → { img, cbs: [{onDone, onFail}] }
+
+	function fetchImg(url, onDone, onFail) {
+		// Cache hit: return immediately.
+		if (imgCache.has(url)) { onDone(imgCache.get(url)); return; }
+
+		// In-flight: piggyback onto existing request.
+		if (imgFlight.has(url)) {
+			imgFlight.get(url).cbs.push({ onDone: onDone, onFail: onFail });
+			return;
+		}
+
+		// New fetch.
+		var img   = new Image();
+		var entry = { img: img, cbs: [{ onDone: onDone, onFail: onFail }] };
+		imgFlight.set(url, entry);
+
+		img.onload = function () {
+			imgFlight.delete(url);
+			function settle() {
+				imgCache.set(url, img);
+				entry.cbs.forEach(function (cb) { cb.onDone(img); });
+			}
+			// decode() pre-warms the GPU texture so the image paints without
+			// a compositor stall. Must be after onload (iOS Safari fix).
+			if (typeof img.decode === "function") {
+				img.decode().catch(function () {}).finally(settle);
+			} else {
+				settle();
+			}
+		};
+		img.onerror = function () {
+			imgFlight.delete(url);
+			entry.cbs.forEach(function (cb) { cb.onFail(); });
+		};
+		img.src = url;
+	}
+
+	// Warm the cache without updating any slot.
+	function prefetch(url) { fetchImg(url, function () {}, function () {}); }
+
+	// Prefetch full-res for ±2 neighbors so rapid navigation is instant.
+	// When SIDE_SLOT_THUMBS is on, full-res is only ever loaded for the
+	// centre slot, so we skip prefetching here entirely.
+	function preloadAdjacent(index) {
+		if (SIDE_SLOT_THUMBS) return;
+		var n = IMAGES.length;
+		if (n <= 1) return;
+		for (var d = 1; d <= 2; d++) {
+			prefetch(IMAGES[((index + d) % n + n) % n].full);
+			prefetch(IMAGES[((index - d) % n + n) % n].full);
+		}
+	}
+
+	// ── Centre slot loading ───────────────────────────────────────────────────
+	//
+	// Shows the thumbnail immediately (usually a near-instant HTTP cache hit
+	// since the grid already loaded it), then upgrades to full-res when decoded.
+	// The spinner indicates the full-res is still loading.
+	//
+	// loadGen is incremented each time a new centre load starts; async
+	// callbacks check their captured generation and bail if superseded.
+	var loadGen = 0;
+
+	function loadCentre(imgData) {
+		var gen = ++loadGen;
+
+		// Full-res already decoded and cached: display immediately, no spinner.
+		if (imgCache.has(imgData.full)) {
+			lbImgCurr.src = imgCache.get(imgData.full).src;
+			lbImgCurr.alt = imgData.name;
+			lbImgCurr.classList.remove("fading");
+			lbSpinner.classList.remove("visible");
+			return;
+		}
+
+		// Show thumbnail while full-res is fetching.
+		// Avoid a redundant assignment if the slot already shows our thumbnail
+		// (e.g. it just became centre from a side slot).
+		var thumbAbs = new URL(imgData.thumb, location.href).href;
+		if (lbImgCurr.src !== thumbAbs) {
+			lbImgCurr.src = imgData.thumb;
+			lbImgCurr.alt = imgData.name;
+		}
+		lbImgCurr.classList.remove("fading");
+		lbSpinner.classList.add("visible");
+
+		fetchImg(imgData.full,
+			function (imgEl) {
+				if (gen !== loadGen) return; // superseded
+				lbImgCurr.src = imgEl.src;
+				lbImgCurr.alt = imgData.name;
+				lbSpinner.classList.remove("visible");
+			},
+			function () {
+				if (gen !== loadGen) return;
+				lbSpinner.classList.remove("visible");
+			}
+		);
+	}
+
+	// ── Side slot loading ─────────────────────────────────────────────────────
+	//
+	// Side slots always show the thumbnail immediately (no wait, no spinner).
+	// genRef is a {v: Number} object — incrementing genRef.v cancels any
+	// pending upgrade for this slot.
+	//
+	// When SIDE_SLOT_THUMBS = true:
+	//   Shows thumbnail only. No full-res fetch of any kind — not even a
+	//   background warm. Full-res is requested by loadCentre() only after
+	//   the user navigates to this slot.
+	//
+	// When SIDE_SLOT_THUMBS = false:
+	//   Also upgrades the slot src to full-res when the fetch completes,
+	//   so swipe-to is instant with no upgrade delay.
+
+	var prevGen = { v: 0 };
+	var nextGen = { v: 0 };
+
+	function loadSide(slotEl, genRef, imgData) {
+		if (!imgData) { slotEl.src = ""; slotEl.alt = ""; return; }
+		var gen = ++genRef.v;
+
+		// Full-res already cached: show it directly (regardless of mode).
+		if (imgCache.has(imgData.full)) {
+			slotEl.src = imgCache.get(imgData.full).src;
+			slotEl.alt = imgData.name;
+			return;
+		}
+
+		// Show thumbnail immediately.
+		slotEl.src = imgData.thumb;
+		slotEl.alt = imgData.name;
+
+		if (SIDE_SLOT_THUMBS) {
+			// Thumb-only mode: show the thumbnail and do nothing else.
+			// Full-res will be fetched by loadCentre() only when this slot
+			// becomes the active centre — no background full-res fetches.
+		} else {
+			// Upgrade slot to full-res when decoded.
+			var capturedEl  = slotEl;
+			var capturedRef = genRef;
+			var capturedGen = gen;
+			fetchImg(imgData.full,
+				function (imgEl) {
+					if (capturedGen !== capturedRef.v) return; // slot was reassigned
+					capturedEl.src = imgEl.src;
+				},
+				function () {}
+			);
+		}
+	}
+
+	// Populate all three slots for a given centre index.
+	// Side slots are deferred one rAF so centre gets first priority on
+	// network connections and decode resources.
+	function loadAllSlots(index) {
+		var n = IMAGES.length;
+		lbName.textContent    = IMAGES[index].name;
+		lbCounter.textContent = "(" + (index + 1) + "\u202f/\u202f" + n + ")";
+
+		loadCentre(IMAGES[index]);
+
+		if (n > 1) {
+			requestAnimationFrame(function () {
+				loadSide(lbImgPrev, prevGen, IMAGES[(index - 1 + n) % n]);
+				loadSide(lbImgNext, nextGen, IMAGES[(index + 1) % n]);
+			});
+		}
+	}
+
+	// ── URL hash deep-linking ─────────────────────────────────────────────────
+	function setHashForIndex(index) {
+		var name = IMAGES[index] ? IMAGES[index].name : "";
+		if (name) history.replaceState(null, "", "#" + encodeURIComponent(name));
+	}
+	function clearHash() {
+		history.replaceState(null, "", location.pathname + location.search);
+	}
+	function indexFromHash() {
+		var hash = decodeURIComponent(location.hash.slice(1));
+		if (!hash) return -1;
+		return IMAGES.findIndex(function (img) { return img.name === hash; });
+	}
+
+	// ── Lightbox state ────────────────────────────────────────────────────────
+	var current = 0;
+
+	function updateTopbar(index) {
+		var img = IMAGES[index];
+		if (!img) return;
+		lbDownload.href = img.full;
+		lbDownload.setAttribute("download", img.name);
+	}
+
+	function openLightbox(index) {
+		current = index;
+		lightbox.classList.add("open");
+		document.body.style.overflow = "hidden";
+		loadAllSlots(current);
+		setHashForIndex(current);
+		updateTopbar(current);
+		preloadAdjacent(current);
+	}
+
+	function closeLightbox() {
+		lightbox.classList.remove("open");
+		document.body.style.overflow = "";
+		clearHash();
+		loadGen++; // cancel any in-flight centre-slot load
+		lbSpinner.classList.remove("visible");
+		lbImgCurr.classList.remove("fading");
+
+		exitFullscreen()
+	}
+
+	function navigate(delta) {
+		if (IMAGES.length === 0 || swipeAnimating) return;
+		commitSwipe(delta);
+	}
+
+	// ── Open from hash on page load ───────────────────────────────────────────
+	(function () {
+		var i = indexFromHash();
+		if (i >= 0) {
+			openLightbox(i);
+			// Defer grid build so it doesn't compete with the LCP image fetch.
+			if (typeof requestIdleCallback === "function") {
+				requestIdleCallback(function () { buildGrid(IMAGES); }, { timeout: 2000 });
+			} else {
+				setTimeout(function () { buildGrid(IMAGES); }, 200);
+			}
+		} else {
+			buildGrid(IMAGES);
+		}
+	}());
+
+	// ── Browser back/forward ──────────────────────────────────────────────────
+	window.addEventListener("hashchange", function () {
+		var i = indexFromHash();
+		if (i >= 0) {
+			if (!lightbox.classList.contains("open")) {
+				openLightbox(i);
+			} else {
+				current = i;
+				loadAllSlots(i);
+				updateTopbar(i);
+				preloadAdjacent(i);
+			}
+		} else if (lightbox.classList.contains("open")) {
+			lightbox.classList.remove("open");
+			document.body.style.overflow = "";
+			loadGen++;
+		}
+	});
+
+	// ── Button controls ───────────────────────────────────────────────────────
+	document.getElementById("lb-prev").addEventListener("mousedown", function () {
+		navigate(-1);
+	});
+	document.getElementById("lb-next").addEventListener("mousedown", function () {
+		navigate(1);
+	});
+	document.getElementById("lb-close").addEventListener("mousedown", function () {
+		closeLightbox()
+	});
+
+	lightbox.addEventListener("mousedown", function (e) {
+		var t = e.target;
+		if (t === lightbox || t.id === "lb-stage" || t.id === "lb-track" || t.classList.contains("lb-slide")) {
+			closeLightbox();
+		}
+	});
+
+	// ── Keyboard ──────────────────────────────────────────────────────────────
+	document.addEventListener("keydown", function (e) {
+		if (!lightbox.classList.contains("open")) return;
+		if (e.key === "Escape")                                   closeLightbox();
+		if (e.key === "ArrowLeft"  || e.key === "h" || e.key === "a") navigate(-1);
+		if (e.key === "ArrowRight" || e.key === "l" || e.key === "d") navigate(1);
+		if (e.key === "f") toggleFullscreen();
+	});
+
+	// ── Touch / swipe ─────────────────────────────────────────────────────────
+	var touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+	var dragActive    = false;
+	var swipeAnimating = false;
+	var SWIPE_MIN_DIST  = 30;   // px
+	var SWIPE_MIN_VEL   = 0.2;  // px/ms
+	var SWIPE_AXIS_LOCK = 1.5;
+	var ANIM_MS         = 280;
+
+	function setTrackX(extraPx) {
+		lbTrack.style.transform = extraPx === 0
+			? "translateX(-33.333%)"
+			: "translateX(calc(-33.333% + " + extraPx + "px))";
+	}
+
+	lightbox.addEventListener("touchstart", function (e) {
+		if (swipeAnimating || e.touches.length !== 1) return;
+		if (e.target.closest("#lb-topbar") || e.target.closest("#lb-caption") || e.target.closest("#lb-fullscreen")) return;
+		touchStartX    = e.touches[0].clientX;
+		touchStartY    = e.touches[0].clientY;
+		touchStartTime = Date.now();
+		dragActive     = true;
+		lbTrack.style.willChange  = "transform";
+		lbTrack.style.transition  = "none";
+	}, { passive: true });
+
+	lightbox.addEventListener("touchmove", function (e) {
+		if (!dragActive || e.touches.length !== 1) return;
+		var dx = e.touches[0].clientX - touchStartX;
+		var dy = e.touches[0].clientY - touchStartY;
+		if (Math.abs(dy) > Math.abs(dx) * SWIPE_AXIS_LOCK && Math.abs(dy) > 10) {
+			dragActive = false;
+			lbTrack.style.willChange = "";
+			lbTrack.style.transition = "";
+			setTrackX(0);
+			return;
+		}
+		if (IMAGES.length > 1) setTrackX(dx);
+	}, { passive: true });
+
+	lightbox.addEventListener("touchend", function (e) {
+		if (!dragActive) return;
+		dragActive = false;
+		var dx      = e.changedTouches[0].clientX - touchStartX;
+		var dy      = e.changedTouches[0].clientY - touchStartY;
+		var elapsed = Date.now() - touchStartTime;
+		var vel     = Math.abs(dx) / elapsed;
+		var isHoriz = Math.abs(dx) > Math.abs(dy) * SWIPE_AXIS_LOCK;
+		var isSwipe = isHoriz && (Math.abs(dx) > SWIPE_MIN_DIST || vel > SWIPE_MIN_VEL);
+		if (isSwipe && IMAGES.length > 1) {
+			commitSwipe(dx < 0 ? 1 : -1);
+		} else {
+			lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
+			setTrackX(0);
+			setTimeout(function () { lbTrack.style.transition = ""; lbTrack.style.willChange = ""; }, ANIM_MS + 10);
+		}
+	}, { passive: true });
+
+	lightbox.addEventListener("touchcancel", function () {
+		if (!dragActive) return;
+		dragActive = false;
+		lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
+		setTrackX(0);
+		setTimeout(function () { lbTrack.style.transition = ""; lbTrack.style.willChange = ""; }, ANIM_MS + 10);
+	}, { passive: true });
+
+	function isFullscreen() {
+		if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+			return false
+		}
+
+		return true
+	}
+
+	function toggleFullscreen() {
+		if (!isFullscreen()) {
+			enterFullscreen()
+		} else {
+			exitFullscreen()
+		}
+
+	}
+
+	function enterFullscreen() {
+		if (isFullscreen()) {
+			return
+		}
+
+		if (lightbox.requestFullscreen)            lightbox.requestFullscreen();
+		else if (lightbox.webkitRequestFullscreen) lightbox.webkitRequestFullscreen();
+
+	}
+
+	function exitFullscreen() {
+		if (!isFullscreen()) {
+			return
+		}
+
+		if (document.exitFullscreen)              document.exitFullscreen();
+		else if (document.webkitExitFullscreen)   document.webkitExitFullscreen();
+	}
+
+	// ── Swipe commit ──────────────────────────────────────────────────────────
+	//
+	// Animates the track to the arriving slot, then reshuffles the three img
+	// srcs so we can snap back to the centre without any network hit.
+	// After the reshuffle:
+	//   • loadCentre() upgrades the new centre slot to full-res (instant if
+	//     preloading worked; otherwise shows thumb with spinner).
+	//   • loadSide() populates the newly vacated far slot.
+	function commitSwipe(direction) {
+		swipeAnimating = true;
+		var n = IMAGES.length;
+
+		lbTrack.style.willChange = "transform";
+		lbTrack.style.transition = "transform " + ANIM_MS + "ms cubic-bezier(.25,.46,.45,.94)";
+		lbTrack.style.transform  = direction > 0 ? "translateX(-66.666%)" : "translateX(0%)";
+
+		setTimeout(function () {
+			current = ((current + direction) % n + n) % n;
+			lbTrack.style.transition = "none";
+
+			// Reshuffle slot srcs. The arriving slot src (thumb or full-res)
+			// becomes the new centre src; the vacated slot is cleared.
+			if (direction > 0) {
+				lbImgPrev.src = lbImgCurr.src;  lbImgPrev.alt = lbImgCurr.alt;
+				lbImgCurr.src = lbImgNext.src;  lbImgCurr.alt = lbImgNext.alt;
+				lbImgNext.src = "";              lbImgNext.alt = "";
+			} else {
+				lbImgNext.src = lbImgCurr.src;  lbImgNext.alt = lbImgCurr.alt;
+				lbImgCurr.src = lbImgPrev.src;  lbImgCurr.alt = lbImgPrev.alt;
+				lbImgPrev.src = "";              lbImgPrev.alt = "";
+			}
+
+			setTrackX(0);
+
+			lbName.textContent    = IMAGES[current].name;
+			lbCounter.textContent = "(" + (current + 1) + "\u202f/\u202f" + n + ")";
+			setHashForIndex(current);
+			updateTopbar(current);
+
+			// Upgrade the new centre slot to full-res.
+			// This is usually instant when preloading has run ahead.
+			loadCentre(IMAGES[current]);
+
+			requestAnimationFrame(function () {
+				lbTrack.style.transition = "";
+				lbTrack.style.willChange = "";
+				swipeAnimating = false;
+			});
+
+			// Load the newly vacated far slot and extend the preload window,
+			// deferred until idle to avoid competing with the repaint.
+			var farSlotEl  = direction > 0 ? lbImgNext : lbImgPrev;
+			var farSlotGen = direction > 0 ? nextGen   : prevGen;
+			var farIdx     = direction > 0 ? (current + 1) % n : (current - 1 + n) % n;
+
+			var doIdle = function () {
+				loadSide(farSlotEl, farSlotGen, IMAGES[farIdx]);
+				preloadAdjacent(current);
+			};
+			if (typeof requestIdleCallback === "function") {
+				requestIdleCallback(doIdle, { timeout: 500 });
+			} else {
+				setTimeout(doIdle, 100);
+			}
+		}, ANIM_MS + 10);
+	}
+
+	// ── Fullscreen ────────────────────────────────────────────────────────────
+	(function () {
+		var btn      = document.getElementById("lb-fullscreen");
+		var iconEnter = document.getElementById("lb-fs-enter");
+		var iconExit  = document.getElementById("lb-fs-exit");
+
+		if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) {
+			btn.classList.add("unsupported");
+			return;
+		}
+
+		btn.addEventListener("mousedown", function (e) {
+			e.stopPropagation();
+			toggleFullscreen();
+		});
+
+		function onFsChange() {
+			var active = !!(document.fullscreenElement || document.webkitFullscreenElement);
+			iconEnter.style.display = active ? "none" : "";
+			iconExit.style.display  = active ? ""     : "none";
+			btn.setAttribute("aria-label", active ? "Exit fullscreen" : "Toggle fullscreen");
+		}
+		document.addEventListener("fullscreenchange",       onFsChange);
+		document.addEventListener("webkitfullscreenchange", onFsChange);
+	}());
+
+	// ── Share / copy helpers ──────────────────────────────────────────────────
+	function copyToClipboard(text, onSuccess) {
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(text).then(onSuccess).catch(function () {
+				fallbackCopy(text, onSuccess);
+			});
+		} else {
+			fallbackCopy(text, onSuccess);
+		}
+	}
+	function fallbackCopy(text, onSuccess) {
+		try {
+			var tmp = document.createElement("input");
+			tmp.value = text;
+			document.body.appendChild(tmp);
+			tmp.select();
+			document.execCommand("copy");
+			document.body.removeChild(tmp);
+			onSuccess();
+		} catch (e) {}
+	}
+
+	// ── Share button ──────────────────────────────────────────────────────────
+	lbShare.addEventListener("mousedown", function (e) {
+		e.stopPropagation();
+		var img = IMAGES[current];
+		if (!img) return;
+		var url = location.href;
+		if (navigator.share) {
+			navigator.share({ title: img.name, url: url }).catch(function () {});
+			return;
+		}
+		copyToClipboard(url, function () {
+			lbShare.classList.add("active");
+			setTimeout(function () { lbShare.classList.remove("active"); }, 1800);
+		});
+	});
+
+	// ── Download button ───────────────────────────────────────────────────────
+	lbDownload.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+
+	// ── Copy-link button ──────────────────────────────────────────────────────
+	document.getElementById("lb-copy").addEventListener("mousedown", function (e) {
+		e.stopPropagation();
+		var btn = this;
+		copyToClipboard(location.href, function () {
+			btn.classList.add("copied");
+			setTimeout(function () { btn.classList.remove("copied"); }, 1800);
+		});
+	});
+
+	// ── Hot-reload polling ────────────────────────────────────────────────────
+	// Polls the page every 10 s and rebuilds the grid if the image count changed.
+	(function () {
+		var INTERVAL = 10000;
+		function poll() {
+			fetch(location.href, { cache: "no-store" })
+				.then(function (r) { return r.text(); })
+				.then(function (html) {
+					var match = html.match(/var IMAGES = (\[[\s\S]*?\]);/);
+					if (!match) return;
+					var fresh;
+					try { fresh = JSON.parse(match[1]); } catch (e) { return; }
+					if (fresh.length === IMAGES.length) return;
+					var delta = fresh.length - IMAGES.length;
+					var msg = delta > 0
+						? "+" + delta + " new photo" + (delta === 1 ? "" : "s")
+						: Math.abs(delta) + " photo" + (Math.abs(delta) === 1 ? "" : "s") + " removed";
+					IMAGES = fresh;
+					buildGrid(IMAGES);
+					countEl.textContent = fresh.length + " photo" + (fresh.length === 1 ? "" : "s");
+					if (lightbox.classList.contains("open") && current >= IMAGES.length) closeLightbox();
+					reloadToast.textContent = msg;
+					reloadToast.classList.add("show");
+					setTimeout(function () { reloadToast.classList.remove("show"); }, 3000);
+				})
+				.catch(function () {});
+		}
+		setInterval(poll, INTERVAL);
+	}());
 
 }());
-        </script>
-    </body>
+		</script>
+	</body>
 </html>
