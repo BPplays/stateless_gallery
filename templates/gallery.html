@@ -876,10 +876,10 @@
 		document.getElementById("lb-prev").style.opacity = "1";
 		document.getElementById("lb-next").style.opacity = "1";
 		document.getElementById("lb-caption").style.opacity = "1";
-		
+
 		// Clear any existing timeout
 		clearTimeout(hideTimeout);
-		
+
 		// Set new timeout to hide buttons after 3 seconds
 		hideTimeout = setTimeout(function() {
 			document.getElementById("lb-fullscreen").style.opacity = "0";
@@ -983,5 +983,7 @@
 
 }());
 		</script>
+		
+		<script src="/gallery.js"></script>
 	</body>
 </html>
