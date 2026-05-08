@@ -672,6 +672,7 @@ document.getElementById("lb-copy").addEventListener("mousedown", function (e) {
 	setInterval(poll, INTERVAL);
 }());
 
+
 // ── Auto-hide buttons after inactivity ────────────────────────────────────
 var hideTimeout;
 var showButtons = function() {
