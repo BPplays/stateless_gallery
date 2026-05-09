@@ -687,7 +687,9 @@ var showButtons = function() {
 	document.getElementById("lb-topbar").style.opacity = "1";
 	document.getElementById("lb-prev").style.opacity = "1";
 	document.getElementById("lb-next").style.opacity = "1";
-	document.getElementById("lb-caption").style.opacity = "1";
+
+	// disable always
+	document.getElementById("lb-caption").style.opacity = "0";
 
 	// Clear any existing timeout
 	clearTimeout(hideTimeout);
