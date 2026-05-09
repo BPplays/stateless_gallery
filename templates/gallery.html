@@ -358,47 +358,44 @@
 
 		<!-- Settings Panel -->
 		<div id="settings-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; z-index: 2001; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+			<button id="close-settings" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer;">×</button>
 			<h2 style="margin-top: 0; margin-bottom: 15px;">Gallery Settings</h2>
 			
-			<div style="margin-bottom: 15px;">
-				<label style="display: block; margin-bottom: 5px; font-weight: bold;">Primary Color</label>
-				<select id="primary-color" style="width: 100%; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text);">
-					<option value="#ff0000">Red</option>
-					<option value="#00ff00">Green</option>
-					<option value="#0000ff">Blue</option>
-					<option value="#ffff00">Yellow</option>
-					<option value="#ff00ff">Magenta</option>
-					<option value="#00ffff">Cyan</option>
-					<option value="#ff9900">Orange</option>
-					<option value="#9900ff">Purple</option>
-					<option value="#ff66cc">Pink</option>
-					<option value="#0099ff">Sky Blue</option>
-				</select>
+			<div style="margin-bottom: 20px;">
+				<label style="display: block; margin-bottom: 10px; font-weight: bold;">Primary Color</label>
+				<div id="primary-color-options" style="display: flex; flex-wrap: wrap; gap: 10px;">
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ff0000; cursor: pointer;" data-color="#ff0000"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #00ff00; cursor: pointer;" data-color="#00ff00"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #0000ff; cursor: pointer;" data-color="#0000ff"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ffff00; cursor: pointer;" data-color="#ffff00"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ff00ff; cursor: pointer;" data-color="#ff00ff"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #00ffff; cursor: pointer;" data-color="#00ffff"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ff9900; cursor: pointer;" data-color="#ff9900"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #9900ff; cursor: pointer;" data-color="#9900ff"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ff66cc; cursor: pointer;" data-color="#ff66cc"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #0099ff; cursor: pointer;" data-color="#0099ff"></div>
+				</div>
 			</div>
 			
-			<div style="margin-bottom: 15px;">
-				<label style="display: block; margin-bottom: 5px; font-weight: bold;">Secondary Color</label>
-				<select id="secondary-color" style="width: 100%; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text);">
-					<option value="#ff0000">Red</option>
-					<option value="#00ff00">Green</option>
-					<option value="#0000ff">Blue</option>
-					<option value="#ffff00">Yellow</option>
-					<option value="#ff00ff">Magenta</option>
-					<option value="#00ffff">Cyan</option>
-					<option value="#ff9900">Orange</option>
-					<option value="#9900ff">Purple</option>
-					<option value="#ff66cc">Pink</option>
-					<option value="#0099ff">Sky Blue</option>
-				</select>
+			<div style="margin-bottom: 20px;">
+				<label style="display: block; margin-bottom: 10px; font-weight: bold;">Secondary Color</label>
+				<div id="secondary-color-options" style="display: flex; flex-wrap: wrap; gap: 10px;">
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ff0000; cursor: pointer;" data-color="#ff0000"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #00ff00; cursor: pointer;" data-color="#00ff00"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #0000ff; cursor: pointer;" data-color="#0000ff"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ffff00; cursor: pointer;" data-color="#ffff00"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ff00ff; cursor: pointer;" data-color="#ff00ff"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #00ffff; cursor: pointer;" data-color="#00ffff"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ff9900; cursor: pointer;" data-color="#ff9900"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #9900ff; cursor: pointer;" data-color="#9900ff"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #ff66cc; cursor: pointer;" data-color="#ff66cc"></div>
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: #0099ff; cursor: pointer;" data-color="#0099ff"></div>
+				</div>
 			</div>
 			
 			<div style="margin-bottom: 20px;">
 				<button id="export-settings" style="width: 48%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); margin-right: 2%; cursor: pointer;">Export Settings</button>
 				<button id="import-settings" style="width: 48%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer;">Import Settings</button>
-			</div>
-			
-			<div style="text-align: center;">
-				<button id="close-settings" style="padding: 8px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer;">Close Settings</button>
 			</div>
 		</div>
 
