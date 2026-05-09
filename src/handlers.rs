@@ -79,6 +79,10 @@ pub async fn serve_favicon(
     }
 }
 
+pub async fn serve_gallery_js () -> Response {
+    return include_str!("../static/gallery.js").into_response()
+}
+
 /// Serve the gallery index page.
 pub async fn gallery_index(
     AxumPath(slug): AxumPath<String>,
@@ -177,7 +181,7 @@ pub async fn serve_static(
 ) -> Response {
     // Only serve gallery.js from static directory
     let static_path = std::path::Path::new("static").join("gallery.js");
-    
+
     // Serve the file if it exists, otherwise return not found
     serve_file(&static_path).await
 }
