@@ -660,7 +660,20 @@ document.getElementById("lb-copy").addEventListener("mousedown", function (e) {
 
 // ── Auto-hide buttons after inactivity ────────────────────────────────────
 var hideTimeout;
+var showButtonsInitDone = false;
 var showButtons = function() {
+
+	if (!showButtonsInitDone) {
+		document.addEventListener("mousemove", showButtons);
+		document.addEventListener("touchmove", showButtons);
+		document.addEventListener("mousedown", showButtons);
+		document.addEventListener("touchstart", showButtons);
+		document.addEventListener("keydown", showButtons);
+
+		showButtonsInitDone = true;
+	}
+
+
 	// Show all buttons
 	document.getElementById("lb-fullscreen").style.opacity = "1";
 	document.getElementById("lb-topbar").style.opacity = "1";
@@ -689,10 +702,3 @@ var showButtons = function() {
 		hideTimeout = null
 	}
 };
-
-// Add event listeners to show buttons on user activity
-document.addEventListener("mousemove", showButtons);
-document.addEventListener("touchmove", showButtons);
-document.addEventListener("mousedown", showButtons);
-document.addEventListener("touchstart", showButtons);
-document.addEventListener("keydown", showButtons);
