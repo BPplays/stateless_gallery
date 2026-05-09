@@ -698,6 +698,7 @@ function loadSettings() {
 			if (parsed.primary && isValidColor(parsed.primary)) {
 				settings.primary = parsed.primary;
 			} else {
+				console.log("resetting primary color, not valid or not there")
 				settings.primary = '#ff66cc';
 			}
 
@@ -719,6 +720,7 @@ function loadSettings() {
 }
 
 function isValidColor(color) {
+	return true
 	// Basic color validation
 	return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
 }
