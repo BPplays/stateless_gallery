@@ -275,6 +275,10 @@ function indexFromHash() {
 // ── Lightbox state ────────────────────────────────────────────────────────
 var current = 0;
 
+function isLightboxOpen() {
+	return lightbox.classList.contains("open")
+}
+
 function updateTopbar(index) {
 	var img = IMAGES[index];
 	if (!img) return;
@@ -290,6 +294,7 @@ function openLightbox(index) {
 	setHashForIndex(current);
 	updateTopbar(current);
 	preloadAdjacent(current);
+	showButtons();
 }
 
 function closeLightbox() {
@@ -300,6 +305,7 @@ function closeLightbox() {
 	lbSpinner.classList.remove("visible");
 	lbImgCurr.classList.remove("fading");
 
+	showButtons();
 	exitFullscreen()
 }
 
@@ -669,15 +675,19 @@ var showButtons = function() {
 	clearTimeout(hideTimeout);
 
 	// Set new timeout to hide buttons after 3 seconds
-	hideTimeout = setTimeout(function() {
-		document.getElementById("lb-fullscreen").style.opacity = "0";
-		document.getElementById("lb-topbar").style.opacity = "0";
-		document.getElementById("lb-prev").style.opacity = "0";
-		document.getElementById("lb-next").style.opacity = "0";
-		document.getElementById("lb-caption").style.opacity = "0";
+	if (isLightboxOpen()) {
+		hideTimeout = setTimeout(function() {
+			document.getElementById("lb-fullscreen").style.opacity = "0";
+			document.getElementById("lb-topbar").style.opacity = "0";
+			document.getElementById("lb-prev").style.opacity = "0";
+			document.getElementById("lb-next").style.opacity = "0";
+			document.getElementById("lb-caption").style.opacity = "0";
 
-		document.body.style.cursor = "none";
-	}, 3000);
+			document.body.style.cursor = "none";
+		}, 3000);
+	} else {
+		hideTimeout = null
+	}
 };
 
 // Initialize with buttons visible
