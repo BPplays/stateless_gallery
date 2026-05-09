@@ -122,11 +122,7 @@
 		}
 		#lightbox.open { display: block; }
 
-		#lightbox:fullscreen {
-			background: #000;
-		}
-		/* For Webkit browsers */
-		#lightbox:-webkit-full-screen {
+		#lightbox:fullscreen, #lightbox:-webkit-full-screen {
 			background: #000;
 		}
 
@@ -169,6 +165,7 @@
 			transition: background .15s, color .15s, border-color .15s;
 			backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 			text-decoration: none;
+			user-select: none; -webkit-user-select: none;
 		}
 		.lb-icon-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
 		.lb-icon-btn.active { color: #6ee7b7; border-color: #6ee7b7; }

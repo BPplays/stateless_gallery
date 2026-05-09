@@ -396,19 +396,25 @@ lightbox.addEventListener("touchstart", function (e) {
 	lbTrack.style.transition  = "none";
 }, { passive: true });
 
-lightbox.addEventListener("touchmove", function (e) {
-	if (!dragActive || e.touches.length !== 1) return;
-	var dx = e.touches[0].clientX - touchStartX;
-	var dy = e.touches[0].clientY - touchStartY;
-	if (Math.abs(dy) > Math.abs(dx) * SWIPE_AXIS_LOCK && Math.abs(dy) > 10) {
-		dragActive = false;
-		lbTrack.style.willChange = "";
-		lbTrack.style.transition = "";
-		setTrackX(0);
-		return;
-	}
-	if (IMAGES.length > 1) setTrackX(dx);
-}, { passive: true });
+	lightbox.addEventListener("touchmove", function (e) {
+		if (!dragActive || e.touches.length !== 1) return;
+		var dx = e.touches[0].clientX - touchStartX;
+		var dy = e.touches[0].clientY - touchStartY;
+		if (Math.abs(dy) > Math.abs(dx) * SWIPE_AXIS_LOCK && Math.abs(dy) > 10) {
+			dragActive = false;
+			lbTrack.style.willChange = "";
+			lbTrack.style.transition = "";
+			setTrackX(0);
+			return;
+		}
+
+		// Prevent swiping when zoomed in (if element is scaled)
+		if (e.target.style.transform && e.target.style.transform !== "none") {
+			return;
+		}
+
+		if (IMAGES.length > 1) setTrackX(dx);
+	}, { passive: true });
 
 lightbox.addEventListener("touchend", function (e) {
 	if (!dragActive) return;
@@ -560,6 +566,13 @@ function commitSwipe(direction) {
 		iconEnter.style.display = active ? "none" : "";
 		iconExit.style.display  = active ? ""     : "none";
 		btn.setAttribute("aria-label", active ? "Exit fullscreen" : "Toggle fullscreen");
+
+		// Hide cursor when fullscreen and buttons are inactive
+		if (active) {
+			document.body.style.cursor = "none";
+		} else {
+			document.body.style.cursor = "";
+		}
 	}
 	document.addEventListener("fullscreenchange",       onFsChange);
 	document.addEventListener("webkitfullscreenchange", onFsChange);
