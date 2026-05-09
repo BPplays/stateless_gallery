@@ -122,6 +122,14 @@
 		}
 		#lightbox.open { display: block; }
 
+		#lightbox:fullscreen {
+			background: #000;
+		}
+		/* For Webkit browsers */
+		#lightbox:-webkit-full-screen {
+			background: #000;
+		}
+
 		/* Stage: clips the track to one viewport width */
 		#lb-stage { position: absolute; inset: 0; overflow: hidden; }
 
