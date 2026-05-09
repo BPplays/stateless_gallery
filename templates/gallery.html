@@ -167,8 +167,20 @@
 			text-decoration: none;
 			user-select: none; -webkit-user-select: none;
 		}
-		.lb-icon-btn:hover { background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3); }
-		.lb-icon-btn.active { color: #6ee7b7; border-color: #6ee7b7; }
+		.lb-icon-btn:hover {
+			background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.3);
+		}
+		.lb-icon-btn.active {
+			color: #6ee7b7; border-color: #6ee7b7;
+		}
+
+		/* ── Shared button style ─────────────────────────────────── */
+		.lb-icon-btn#lb-close:hover {
+			/* background: color(display-p3 1 0 0); */
+
+			/*   https://oklch.com/#0.6653,0.2806,21.23,100   */
+			background: color(display-p3 0.9987 0.169 0.2799);
+		}
 
 		/* ── Top-left: fullscreen ────────────────────────────────── */
 		#lb-fullscreen {
