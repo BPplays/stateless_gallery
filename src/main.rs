@@ -121,8 +121,8 @@ async fn main() -> Result<()> {
 		.route("/{slug}/thumb/{encoded}", get(handlers::serve_thumbnail))
 		// Full-size:      GET /{slug}/full/{encoded}?secret=...
 		.route("/{slug}/full/{encoded}", get(handlers::serve_full))
-		// Static files: GET /{path}
-		.route("/{path}", get(handlers::serve_static))
+		// Static files: GET /gallery.js
+		.route("/gallery.js", get(handlers::serve_static))
 		.with_state(state);
 
 

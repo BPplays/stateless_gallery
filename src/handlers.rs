@@ -173,16 +173,10 @@ pub async fn serve_full(
 
 /// Serve static files
 pub async fn serve_static(
-    AxumPath(path): AxumPath<String>,
-    State(state): State<Arc<AppState>>,
+    State(_state): State<Arc<AppState>>,
 ) -> Response {
-    // Prevent directory traversal attacks by ensuring the path doesn't contain '..'
-    if path.contains("..") {
-        return not_found();
-    }
-
-    // Construct the file path in the static directory
-    let static_path = std::path::Path::new("static").join(&path);
+    // Only serve gallery.js from static directory
+    let static_path = std::path::Path::new("static").join("gallery.js");
     
     // Serve the file if it exists, otherwise return not found
     serve_file(&static_path).await
