@@ -314,21 +314,6 @@ function navigate(delta) {
 	commitSwipe(delta);
 }
 
-// ── Open from hash on page load ───────────────────────────────────────────
-(function () {
-	var i = indexFromHash();
-	if (i >= 0) {
-		openLightbox(i);
-		// Defer grid build so it doesn't compete with the LCP image fetch.
-		if (typeof requestIdleCallback === "function") {
-			requestIdleCallback(function () { buildGrid(IMAGES); }, { timeout: 2000 });
-		} else {
-			setTimeout(function () { buildGrid(IMAGES); }, 200);
-		}
-	} else {
-		buildGrid(IMAGES);
-	}
-}());
 
 // ── Browser back/forward ──────────────────────────────────────────────────
 window.addEventListener("hashchange", function () {
@@ -702,3 +687,21 @@ var showButtons = function() {
 		hideTimeout = null
 	}
 };
+
+
+
+// ── Open from hash on page load ───────────────────────────────────────────
+(function () {
+	var i = indexFromHash();
+	if (i >= 0) {
+		openLightbox(i);
+		// Defer grid build so it doesn't compete with the LCP image fetch.
+		if (typeof requestIdleCallback === "function") {
+			requestIdleCallback(function () { buildGrid(IMAGES); }, { timeout: 2000 });
+		} else {
+			setTimeout(function () { buildGrid(IMAGES); }, 200);
+		}
+	} else {
+		buildGrid(IMAGES);
+	}
+}());
