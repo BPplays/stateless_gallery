@@ -854,13 +854,28 @@ function applySettings() {
 	document.documentElement.style.setProperty('--primary', settings.primary);
 	document.documentElement.style.setProperty('--secondary', settings.secondary);
 	
-	// Update dropdown values
-	var primarySelect = document.getElementById('primary-color');
-	var secondarySelect = document.getElementById('secondary-color');
-	if (primarySelect && secondarySelect) {
-		primarySelect.value = settings.primary;
-		secondarySelect.value = settings.secondary;
-	}
+	// Update selected color indicators
+	updateColorIndicators();
+}
+
+function updateColorIndicators() {
+	// Remove selected class from all color options
+	var primaryOptions = document.querySelectorAll('#primary-color-options div');
+	var secondaryOptions = document.querySelectorAll('#secondary-color-options div');
+	
+	primaryOptions.forEach(function(option) {
+		option.classList.remove('selected');
+		if (option.getAttribute('data-color') === settings.primary) {
+			option.classList.add('selected');
+		}
+	});
+	
+	secondaryOptions.forEach(function(option) {
+		option.classList.remove('selected');
+		if (option.getAttribute('data-color') === settings.secondary) {
+			option.classList.add('selected');
+		}
+	});
 }
 
 function exportSettings() {
@@ -962,12 +977,13 @@ function showToast(message) {
 	var closeSettingsBtn = document.getElementById('close-settings');
 	var exportSettingsBtn = document.getElementById('export-settings');
 	var importSettingsBtn = document.getElementById('import-settings');
-	var primarySelect = document.getElementById('primary-color');
-	var secondarySelect = document.getElementById('secondary-color');
+	var primaryOptions = document.querySelectorAll('#primary-color-options div');
+	var secondaryOptions = document.querySelectorAll('#secondary-color-options div');
 	
 	if (settingsBtn && settingsPanel) {
 		settingsBtn.addEventListener('click', function() {
 			settingsPanel.style.display = 'block';
+			updateColorIndicators();
 		});
 		
 		closeSettingsBtn.addEventListener('click', function() {
@@ -977,16 +993,21 @@ function showToast(message) {
 		exportSettingsBtn.addEventListener('click', exportSettings);
 		importSettingsBtn.addEventListener('click', importSettings);
 		
-		primarySelect.addEventListener('change', function() {
-			settings.primary = this.value;
-			applySettings();
-			localStorage.setItem('gallerySettings', JSON.stringify(settings));
+		// Add event listeners to color options
+		primaryOptions.forEach(function(option) {
+			option.addEventListener('click', function() {
+				settings.primary = this.getAttribute('data-color');
+				applySettings();
+				localStorage.setItem('gallerySettings', JSON.stringify(settings));
+			});
 		});
 		
-		secondarySelect.addEventListener('change', function() {
-			settings.secondary = this.value;
-			applySettings();
-			localStorage.setItem('gallerySettings', JSON.stringify(settings));
+		secondaryOptions.forEach(function(option) {
+			option.addEventListener('click', function() {
+				settings.secondary = this.getAttribute('data-color');
+				applySettings();
+				localStorage.setItem('gallerySettings', JSON.stringify(settings));
+			});
 		});
 	}
 })();
