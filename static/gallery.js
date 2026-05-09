@@ -700,13 +700,13 @@ function loadSettings() {
 			} else {
 				settings.primary = '#ff66cc';
 			}
-			
+
 			if (parsed.secondary && isValidColor(parsed.secondary)) {
 				settings.secondary = parsed.secondary;
 			} else {
 				settings.secondary = '#0099ff';
 			}
-			
+
 			applySettings();
 		} catch (e) {
 			// If parsing fails, use defaults
@@ -727,7 +727,7 @@ function applySettings() {
 	// Apply CSS variables to root
 	document.documentElement.style.setProperty('--primary', settings.primary);
 	document.documentElement.style.setProperty('--secondary', settings.secondary);
-	
+
 	// Update dropdown values
 	var primarySelect = document.getElementById('primary-color');
 	var secondarySelect = document.getElementById('secondary-color');
@@ -742,10 +742,10 @@ function exportSettings() {
 		primary: settings.primary,
 		secondary: settings.secondary
 	};
-	
+
 	var blob = new Blob([JSON.stringify(settingsToExport, null, 2)], {type: 'application/json'});
 	var url = URL.createObjectURL(blob);
-	
+
 	var a = document.createElement('a');
 	a.href = url;
 	a.download = 'gallery-settings.json';
@@ -759,11 +759,11 @@ function importSettings() {
 	var input = document.createElement('input');
 	input.type = 'file';
 	input.accept = '.json';
-	
+
 	input.onchange = function(e) {
 		var file = e.target.files[0];
 		if (!file) return;
-		
+
 		var reader = new FileReader();
 		reader.onload = function(e) {
 			try {
@@ -772,20 +772,20 @@ function importSettings() {
 					primary: settings.primary,
 					secondary: settings.secondary
 				};
-				
+
 				if (importedSettings.primary && isValidColor(importedSettings.primary)) {
 					validSettings.primary = importedSettings.primary;
 				}
-				
+
 				if (importedSettings.secondary && isValidColor(importedSettings.secondary)) {
 					validSettings.secondary = importedSettings.secondary;
 				}
-				
+
 				// Update settings and apply them
 				settings = validSettings;
 				applySettings();
 				localStorage.setItem('gallerySettings', JSON.stringify(settings));
-				
+
 				// Show notification
 				showToast('Settings imported successfully');
 			} catch (error) {
@@ -794,7 +794,7 @@ function importSettings() {
 		};
 		reader.readAsText(file);
 	};
-	
+
 	input.click();
 }
 
@@ -811,8 +811,8 @@ function showToast(message) {
 
 // ── Settings management ──────────────────────────────────────────────
 var settings = {
-	primary: '#ff66cc',
-	secondary: '#0099ff'
+	primary: 'var(--blue)',
+	secondary: 'var(--green)'
 };
 
 function loadSettings() {
@@ -824,15 +824,15 @@ function loadSettings() {
 			if (parsed.primary && isValidColor(parsed.primary)) {
 				settings.primary = parsed.primary;
 			} else {
-				settings.primary = '#ff66cc';
+				settings.primary = 'var(--blue)';
 			}
-			
+
 			if (parsed.secondary && isValidColor(parsed.secondary)) {
 				settings.secondary = parsed.secondary;
 			} else {
-				settings.secondary = '#0099ff';
+				settings.secondary = 'var(--green)';
 			}
-			
+
 			applySettings();
 		} catch (e) {
 			// If parsing fails, use defaults
@@ -853,7 +853,7 @@ function applySettings() {
 	// Apply CSS variables to root
 	document.documentElement.style.setProperty('--primary', settings.primary);
 	document.documentElement.style.setProperty('--secondary', settings.secondary);
-	
+
 	// Update selected color indicators
 	updateColorIndicators();
 }
@@ -862,14 +862,14 @@ function updateColorIndicators() {
 	// Remove selected class from all color options
 	var primaryOptions = document.querySelectorAll('#primary-color-options div');
 	var secondaryOptions = document.querySelectorAll('#secondary-color-options div');
-	
+
 	primaryOptions.forEach(function(option) {
 		option.classList.remove('selected');
 		if (option.getAttribute('data-color') === settings.primary) {
 			option.classList.add('selected');
 		}
 	});
-	
+
 	secondaryOptions.forEach(function(option) {
 		option.classList.remove('selected');
 		if (option.getAttribute('data-color') === settings.secondary) {
@@ -883,10 +883,10 @@ function exportSettings() {
 		primary: settings.primary,
 		secondary: settings.secondary
 	};
-	
+
 	var blob = new Blob([JSON.stringify(settingsToExport, null, 2)], {type: 'application/json'});
 	var url = URL.createObjectURL(blob);
-	
+
 	var a = document.createElement('a');
 	a.href = url;
 	a.download = 'gallery-settings.json';
@@ -900,11 +900,11 @@ function importSettings() {
 	var input = document.createElement('input');
 	input.type = 'file';
 	input.accept = '.json';
-	
+
 	input.onchange = function(e) {
 		var file = e.target.files[0];
 		if (!file) return;
-		
+
 		var reader = new FileReader();
 		reader.onload = function(e) {
 			try {
@@ -913,20 +913,20 @@ function importSettings() {
 					primary: settings.primary,
 					secondary: settings.secondary
 				};
-				
+
 				if (importedSettings.primary && isValidColor(importedSettings.primary)) {
 					validSettings.primary = importedSettings.primary;
 				}
-				
+
 				if (importedSettings.secondary && isValidColor(importedSettings.secondary)) {
 					validSettings.secondary = importedSettings.secondary;
 				}
-				
+
 				// Update settings and apply them
 				settings = validSettings;
 				applySettings();
 				localStorage.setItem('gallerySettings', JSON.stringify(settings));
-				
+
 				// Show notification
 				showToast('Settings imported successfully');
 			} catch (error) {
@@ -935,7 +935,7 @@ function importSettings() {
 		};
 		reader.readAsText(file);
 	};
-	
+
 	input.click();
 }
 
@@ -954,7 +954,7 @@ function showToast(message) {
 (function () {
 	// Load settings before building grid
 	loadSettings();
-	
+
 	var i = indexFromHash();
 	if (i >= 0) {
 		openLightbox(i);
@@ -979,20 +979,20 @@ function showToast(message) {
 	var importSettingsBtn = document.getElementById('import-settings');
 	var primaryOptions = document.querySelectorAll('#primary-color-options div');
 	var secondaryOptions = document.querySelectorAll('#secondary-color-options div');
-	
+
 	if (settingsBtn && settingsPanel) {
 		settingsBtn.addEventListener('click', function() {
 			settingsPanel.style.display = 'block';
 			updateColorIndicators();
 		});
-		
+
 		closeSettingsBtn.addEventListener('click', function() {
 			settingsPanel.style.display = 'none';
 		});
-		
+
 		exportSettingsBtn.addEventListener('click', exportSettings);
 		importSettingsBtn.addEventListener('click', importSettings);
-		
+
 		// Add event listeners to color options
 		primaryOptions.forEach(function(option) {
 			option.addEventListener('click', function() {
@@ -1001,7 +1001,7 @@ function showToast(message) {
 				localStorage.setItem('gallerySettings', JSON.stringify(settings));
 			});
 		});
-		
+
 		secondaryOptions.forEach(function(option) {
 			option.addEventListener('click', function() {
 				settings.secondary = this.getAttribute('data-color');
@@ -1011,3 +1011,7 @@ function showToast(message) {
 		});
 	}
 })();
+
+document.querySelectorAll("[data-color]").forEach(el => {
+	el.style.backgroundColor = el.dataset.color;
+});
