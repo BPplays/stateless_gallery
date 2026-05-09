@@ -3,7 +3,14 @@
 	"use strict";
 
 	// ── Data (server-injected) ────────────────────────────────────────────────
-	var IMAGES = __IMAGES_JSON__;
+	var IMAGES = (function() {
+		try {
+			return JSON.parse(document.getElementById("gallery-data").textContent);
+		} catch (e) {
+			console.error("Failed to parse gallery data:", e);
+			return [];
+		}
+	})();
 
 	// ── Config ────────────────────────────────────────────────────────────────
 	//
