@@ -865,21 +865,21 @@ function updateColorIndicators() {
 	var secondaryOptions = document.querySelectorAll('#secondary-color-options div');
 
 	if (settingsBtn && settingsPanel) {
-		settingsBtn.addEventListener('onmousedown', function() {
+		settingsBtn.addEventListener('mousedown', function() {
 			settingsPanel.style.display = 'block';
 			updateColorIndicators();
 		});
 
-		closeSettingsBtn.addEventListener('onmousedown', function() {
+		closeSettingsBtn.addEventListener('mousedown', function() {
 			settingsPanel.style.display = 'none';
 		});
 
-		exportSettingsBtn.addEventListener('onmousedown', exportSettings);
-		importSettingsBtn.addEventListener('onmousedown', importSettings);
+		exportSettingsBtn.addEventListener('mousedown', exportSettings);
+		importSettingsBtn.addEventListener('mousedown', importSettings);
 
 		// Add event listeners to color options
 		primaryOptions.forEach(function(option) {
-			option.addEventListener('onmousedown', function() {
+			option.addEventListener('mousedown', function() {
 				settings.primary = this.getAttribute('data-color');
 				applySettings();
 				localStorage.setItem('gallerySettings', JSON.stringify(settings));
@@ -888,7 +888,7 @@ function updateColorIndicators() {
 		});
 
 		secondaryOptions.forEach(function(option) {
-			option.addEventListener('onmousedown', function() {
+			option.addEventListener('mousedown', function() {
 				settings.secondary = this.getAttribute('data-color');
 				applySettings();
 				localStorage.setItem('gallerySettings', JSON.stringify(settings));
