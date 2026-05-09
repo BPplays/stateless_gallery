@@ -685,8 +685,8 @@ document.addEventListener("keydown", showButtons);
 
 // ── Settings management ──────────────────────────────────────────────
 var settings = {
-	primary: '#ff66cc',
-	secondary: '#0099ff'
+	primary: 'var(--blue)',
+	secondary: 'var(--green)'
 };
 
 function loadSettings() {
@@ -699,13 +699,13 @@ function loadSettings() {
 				settings.primary = parsed.primary;
 			} else {
 				console.log("resetting primary color, not valid or not there")
-				settings.primary = '#ff66cc';
+				settings.primary = 'var(--blue)';
 			}
 
 			if (parsed.secondary && isValidColor(parsed.secondary)) {
 				settings.secondary = parsed.secondary;
 			} else {
-				settings.secondary = '#0099ff';
+				settings.secondary = 'var(--green)';
 			}
 
 			applySettings();
