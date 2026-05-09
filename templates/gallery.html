@@ -74,8 +74,6 @@
 			--pink:     color(display-p3 0.8783 0.2296 0.7921);
 
 
-
-
 			--primary:     var(--pink);
 			--secondary:     var(--green);
 
@@ -291,6 +289,12 @@
 			pointer-events: none; z-index: 2000; white-space: nowrap;
 		}
 		#reload-toast.show { opacity: 1; }
+
+		/* ── Settings panel styles ───────────────────────────────── */
+		#settings-panel .selected {
+			outline: 2px solid var(--text);
+			outline-offset: 2px;
+		}
 
 		@media (max-width: 480px) {
 			#gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
