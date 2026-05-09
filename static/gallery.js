@@ -865,32 +865,34 @@ function updateColorIndicators() {
 	var secondaryOptions = document.querySelectorAll('#secondary-color-options div');
 
 	if (settingsBtn && settingsPanel) {
-		settingsBtn.addEventListener('click', function() {
+		settingsBtn.addEventListener('onmousedown', function() {
 			settingsPanel.style.display = 'block';
 			updateColorIndicators();
 		});
 
-		closeSettingsBtn.addEventListener('click', function() {
+		closeSettingsBtn.addEventListener('onmousedown', function() {
 			settingsPanel.style.display = 'none';
 		});
 
-		exportSettingsBtn.addEventListener('click', exportSettings);
-		importSettingsBtn.addEventListener('click', importSettings);
+		exportSettingsBtn.addEventListener('onmousedown', exportSettings);
+		importSettingsBtn.addEventListener('onmousedown', importSettings);
 
 		// Add event listeners to color options
 		primaryOptions.forEach(function(option) {
-			option.addEventListener('click', function() {
+			option.addEventListener('onmousedown', function() {
 				settings.primary = this.getAttribute('data-color');
 				applySettings();
 				localStorage.setItem('gallerySettings', JSON.stringify(settings));
+				updateColorIndicators();
 			});
 		});
 
 		secondaryOptions.forEach(function(option) {
-			option.addEventListener('click', function() {
+			option.addEventListener('onmousedown', function() {
 				settings.secondary = this.getAttribute('data-color');
 				applySettings();
 				localStorage.setItem('gallerySettings', JSON.stringify(settings));
+				updateColorIndicators();
 			});
 		});
 	}
