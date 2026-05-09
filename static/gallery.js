@@ -690,9 +690,6 @@ var showButtons = function() {
 	}
 };
 
-// Initialize with buttons visible
-showButtons();
-
 // Add event listeners to show buttons on user activity
 document.addEventListener("mousemove", showButtons);
 document.addEventListener("touchmove", showButtons);
