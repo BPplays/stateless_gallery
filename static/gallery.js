@@ -811,54 +811,7 @@ function showToast(message) {
 	}
 }
 
-// ── Settings management ──────────────────────────────────────────────
-var settings = {
-	primary: 'var(--blue)',
-	secondary: 'var(--green)'
-};
 
-function loadSettings() {
-	var savedSettings = localStorage.getItem('gallerySettings');
-	if (savedSettings) {
-		try {
-			var parsed = JSON.parse(savedSettings);
-			// Apply any valid settings we have, reset invalid ones to default
-			if (parsed.primary && isValidColor(parsed.primary)) {
-				settings.primary = parsed.primary;
-			} else {
-				settings.primary = 'var(--blue)';
-			}
-
-			if (parsed.secondary && isValidColor(parsed.secondary)) {
-				settings.secondary = parsed.secondary;
-			} else {
-				settings.secondary = 'var(--green)';
-			}
-
-			applySettings();
-		} catch (e) {
-			// If parsing fails, use defaults
-			applySettings();
-		}
-	} else {
-		// Apply default settings if none saved
-		applySettings();
-	}
-}
-
-function isValidColor(color) {
-	// Basic color validation
-	return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
-}
-
-function applySettings() {
-	// Apply CSS variables to root
-	document.documentElement.style.setProperty('--primary', settings.primary);
-	document.documentElement.style.setProperty('--secondary', settings.secondary);
-
-	// Update selected color indicators
-	updateColorIndicators();
-}
 
 function updateColorIndicators() {
 	// Remove selected class from all color options
@@ -880,77 +833,6 @@ function updateColorIndicators() {
 	});
 }
 
-function exportSettings() {
-	var settingsToExport = {
-		primary: settings.primary,
-		secondary: settings.secondary
-	};
-
-	var blob = new Blob([JSON.stringify(settingsToExport, null, 2)], {type: 'application/json'});
-	var url = URL.createObjectURL(blob);
-
-	var a = document.createElement('a');
-	a.href = url;
-	a.download = 'gallery-settings.json';
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
-	URL.revokeObjectURL(url);
-}
-
-function importSettings() {
-	var input = document.createElement('input');
-	input.type = 'file';
-	input.accept = '.json';
-
-	input.onchange = function(e) {
-		var file = e.target.files[0];
-		if (!file) return;
-
-		var reader = new FileReader();
-		reader.onload = function(e) {
-			try {
-				var importedSettings = JSON.parse(e.target.result);
-				var validSettings = {
-					primary: settings.primary,
-					secondary: settings.secondary
-				};
-
-				if (importedSettings.primary && isValidColor(importedSettings.primary)) {
-					validSettings.primary = importedSettings.primary;
-				}
-
-				if (importedSettings.secondary && isValidColor(importedSettings.secondary)) {
-					validSettings.secondary = importedSettings.secondary;
-				}
-
-				// Update settings and apply them
-				settings = validSettings;
-				applySettings();
-				localStorage.setItem('gallerySettings', JSON.stringify(settings));
-
-				// Show notification
-				showToast('Settings imported successfully');
-			} catch (error) {
-				showToast('Error importing settings');
-			}
-		};
-		reader.readAsText(file);
-	};
-
-	input.click();
-}
-
-function showToast(message) {
-	var toast = document.getElementById('reload-toast');
-	if (toast) {
-		toast.textContent = message;
-		toast.classList.add('show');
-		setTimeout(function() {
-			toast.classList.remove('show');
-		}, 3000);
-	}
-}
 
 // ── Open from hash on page load ───────────────────────────────────────────
 (function () {
