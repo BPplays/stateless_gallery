@@ -39,6 +39,25 @@ var reloadToast = document.getElementById("reload-toast");
 var lbDownload = document.getElementById("lb-download");
 var lbShare    = document.getElementById("lb-share");
 
+// ── input helpers ─────────────────────────────────────────────────────────────────
+function isLeftMouse(event) {
+	return event.button === 0
+}
+
+function isPlainLeftMouse(event) {
+	if (
+		event.button !== 0 ||
+		event.ctrlKey ||
+		event.shiftKey ||
+		event.altKey ||
+		event.metaKey
+	) {
+		return false
+	}
+
+	return true
+}
+
 // ── Grid ─────────────────────────────────────────────────────────────────
 function buildGrid(images) {
 	gallery.innerHTML = "";
@@ -66,9 +85,15 @@ function buildGrid(images) {
 
 		(function (idx) {
 			function open() { openLightbox(idx); }
-			item.addEventListener("mousedown", open);
-			item.addEventListener("keydown", function (e) {
-				if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+			item.addEventListener("mousedown", function(event) {
+				if (!isLeftMouse(event)) return;
+				open()
+			});
+			item.addEventListener("keydown", function (event) {
+				if (event.key === "Enter" || event.key === " ") {
+					event.preventDefault();
+					open();
+				}
 			});
 		}(i));
 
@@ -335,18 +360,23 @@ window.addEventListener("hashchange", function () {
 });
 
 // ── Button controls ───────────────────────────────────────────────────────
-document.getElementById("lb-prev").addEventListener("mousedown", function () {
+document.getElementById("lb-prev").addEventListener("mousedown", function (event) {
+	if (!isLeftMouse(event)) return;
+
 	navigate(-1);
 });
-document.getElementById("lb-next").addEventListener("mousedown", function () {
+document.getElementById("lb-next").addEventListener("mousedown", function (event) {
+	if (!isLeftMouse(event)) return;
 	navigate(1);
 });
-document.getElementById("lb-close").addEventListener("mousedown", function () {
+document.getElementById("lb-close").addEventListener("mousedown", function (event) {
+	if (!isLeftMouse(event)) return;
 	closeLightbox()
 });
 
-lightbox.addEventListener("mousedown", function (e) {
-	var t = e.target;
+lightbox.addEventListener("mousedown", function (event) {
+	if (!isLeftMouse(event)) return;
+	var t = event.target;
 	if (t === lightbox || t.id === "lb-stage" || t.id === "lb-track" || t.classList.contains("lb-slide")) {
 		closeLightbox();
 	}
@@ -547,8 +577,9 @@ function commitSwipe(direction) {
 		return;
 	}
 
-	btn.addEventListener("mousedown", function (e) {
-		e.stopPropagation();
+	btn.addEventListener("mousedown", function (event) {
+		if (!isLeftMouse(event)) return;
+		event.stopPropagation();
 		toggleFullscreen();
 	});
 
@@ -585,8 +616,9 @@ function fallbackCopy(text, onSuccess) {
 }
 
 // ── Share button ──────────────────────────────────────────────────────────
-lbShare.addEventListener("mousedown", function (e) {
-	e.stopPropagation();
+lbShare.addEventListener("mousedown", function (event) {
+	if (!isLeftMouse(event)) return;
+	event.stopPropagation();
 	var img = IMAGES[current];
 	if (!img) return;
 	var url = location.href;
@@ -601,11 +633,15 @@ lbShare.addEventListener("mousedown", function (e) {
 });
 
 // ── Download button ───────────────────────────────────────────────────────
-lbDownload.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+lbDownload.addEventListener("mousedown", function (event) {
+	if (!isLeftMouse(event)) return;
+	event.stopPropagation();
+});
 
 // ── Copy-link button ──────────────────────────────────────────────────────
-document.getElementById("lb-copy").addEventListener("mousedown", function (e) {
-	e.stopPropagation();
+document.getElementById("lb-copy").addEventListener("mousedown", function (event) {
+	if (!isLeftMouse(event)) return;
+	event.stopPropagation();
 	var btn = this;
 	copyToClipboard(location.href, function () {
 		btn.classList.add("copied");
@@ -865,21 +901,31 @@ function updateColorIndicators() {
 	var secondaryOptions = document.querySelectorAll('#secondary-color-options div');
 
 	if (settingsBtn && settingsPanel) {
-		settingsBtn.addEventListener('mousedown', function() {
+		settingsBtn.addEventListener('mousedown', function(event) {
+			if (!isLeftMouse(event)) return;
+
 			settingsPanel.style.display = 'block';
 			updateColorIndicators();
 		});
 
-		closeSettingsBtn.addEventListener('mousedown', function() {
+		closeSettingsBtn.addEventListener('mousedown', function(event) {
+			if (!isLeftMouse(event)) return;
 			settingsPanel.style.display = 'none';
 		});
 
-		exportSettingsBtn.addEventListener('mousedown', exportSettings);
-		importSettingsBtn.addEventListener('mousedown', importSettings);
+		exportSettingsBtn.addEventListener('mousedown', function(event) {
+			if (!isLeftMouse(event)) return;
+			exportSettings()
+		});
+		importSettingsBtn.addEventListener('mousedown', function(event) {
+			if (!isLeftMouse(event)) return;
+			importSettings()
+		});
 
 		// Add event listeners to color options
 		primaryOptions.forEach(function(option) {
-			option.addEventListener('mousedown', function() {
+			option.addEventListener('mousedown', function(event) {
+				if (!isLeftMouse(event)) return;
 				settings.primary = this.getAttribute('data-color');
 				applySettings();
 				localStorage.setItem('gallerySettings', JSON.stringify(settings));
@@ -888,7 +934,8 @@ function updateColorIndicators() {
 		});
 
 		secondaryOptions.forEach(function(option) {
-			option.addEventListener('mousedown', function() {
+			option.addEventListener('mousedown', function(event) {
+				if (!isLeftMouse(event)) return;
 				settings.secondary = this.getAttribute('data-color');
 				applySettings();
 				localStorage.setItem('gallerySettings', JSON.stringify(settings));
