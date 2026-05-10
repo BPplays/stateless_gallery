@@ -100,9 +100,15 @@ function buildGrid(images) {
 					if (img) {
 						var url = new URL(location.href);
 						url.hash = encodeURIComponent(img.name);
-						window.open(url.toString(), '_blank');
-						event.preventDefault();
+						var a = document.createElement('a');
+						a.href = url.toString();
+						a.target = '_blank';
+						a.rel = 'noopener noreferrer';
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
 					}
+					event.preventDefault();
 				}
 			});
 			item.addEventListener("keydown", function (event) {
