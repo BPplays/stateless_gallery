@@ -58,6 +58,14 @@ function isPlainLeftMouse(event) {
 	return true
 }
 
+function isMiddleMouse(event) {
+	return (event.button === 1);
+}
+
+function isRightMouse(event) {
+	return (event.button === 2);
+}
+
 // ── Grid ─────────────────────────────────────────────────────────────────
 function buildGrid(images) {
 	gallery.innerHTML = "";
@@ -86,8 +94,7 @@ function buildGrid(images) {
 		(function (idx) {
 			function open() { openLightbox(idx); }
 			item.addEventListener("mousedown", function(event) {
-				if (!isLeftMouse(event)) return;
-				open()
+				if (isLeftMouse(event)) open();
 			});
 			item.addEventListener("keydown", function (event) {
 				if (event.key === "Enter" || event.key === " ") {
