@@ -100,13 +100,16 @@ function buildGrid(images) {
 					if (img) {
 						var url = new URL(location.href);
 						url.hash = encodeURIComponent(img.name);
-						var a = document.createElement('a');
-						a.href = url.toString();
-						a.target = '_blank';
-						a.rel = 'noopener noreferrer';
-						document.body.appendChild(a);
-						a.click();
-						document.body.removeChild(a);
+						// Create a temporary link element and trigger click
+						// This approach is more reliable across different browsers
+						var link = document.createElement('a');
+						link.href = url.toString();
+						link.target = '_blank';
+						link.rel = 'noopener noreferrer';
+						link.style.display = 'none';
+						document.body.appendChild(link);
+						link.click();
+						document.body.removeChild(link);
 					}
 					event.preventDefault();
 				}
@@ -397,7 +400,15 @@ document.getElementById("lb-close").addEventListener("mousedown", function (even
 		if (img) {
 			var url = new URL(location.href);
 			url.hash = "";
-			window.open(url.toString(), '_blank');
+			// Create a temporary link element and trigger click
+			var link = document.createElement('a');
+			link.href = url.toString();
+			link.target = '_blank';
+			link.rel = 'noopener noreferrer';
+			link.style.display = 'none';
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
 		}
 		event.preventDefault();
 		return;
