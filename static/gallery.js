@@ -96,12 +96,12 @@ function buildGrid(images) {
 			item.addEventListener("mousedown", function(event) {
 				if (isLeftMouse(event)) open();
 				if (isMiddleMouse(event)) {
-					// Open the image in a new tab
 					var img = IMAGES[idx];
 					if (img) {
 						var url = new URL(location.href);
 						url.hash = encodeURIComponent(img.name);
 						window.open(url.toString(), '_blank');
+						event.preventDefault();
 					}
 				}
 			});
@@ -387,15 +387,13 @@ document.getElementById("lb-next").addEventListener("mousedown", function (event
 });
 document.getElementById("lb-close").addEventListener("mousedown", function (event) {
 	if (isMiddleMouse(event)) {
-		// Middle click on close button should open the current image in a new tab
 		var img = IMAGES[current];
 		if (img) {
 			var url = new URL(location.href);
-			url.hash = encodeURIComponent(img.name);
-			// Open in new tab, but don't close lightbox
+			url.hash = "";
 			window.open(url.toString(), '_blank');
 		}
-		// Still proceed with normal close behavior for left click
+		event.preventDefault();
 		return;
 	}
 	if (!isLeftMouse(event)) return;
