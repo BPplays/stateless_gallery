@@ -387,13 +387,15 @@ document.getElementById("lb-next").addEventListener("mousedown", function (event
 });
 document.getElementById("lb-close").addEventListener("mousedown", function (event) {
 	if (isMiddleMouse(event)) {
-		// Open the current image in a new tab with the close button clicked
+		// Middle click on close button should open the current image in a new tab
 		var img = IMAGES[current];
 		if (img) {
 			var url = new URL(location.href);
 			url.hash = encodeURIComponent(img.name);
+			// Open in new tab, but don't close lightbox
 			window.open(url.toString(), '_blank');
 		}
+		// Still proceed with normal close behavior for left click
 		return;
 	}
 	if (!isLeftMouse(event)) return;
