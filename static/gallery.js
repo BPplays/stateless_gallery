@@ -95,6 +95,15 @@ function buildGrid(images) {
 			function open() { openLightbox(idx); }
 			item.addEventListener("mousedown", function(event) {
 				if (isLeftMouse(event)) open();
+				if (isMiddleMouse(event)) {
+					// Open the image in a new tab
+					var img = IMAGES[idx];
+					if (img) {
+						var url = new URL(location.href);
+						url.hash = encodeURIComponent(img.name);
+						window.open(url.toString(), '_blank');
+					}
+				}
 			});
 			item.addEventListener("keydown", function (event) {
 				if (event.key === "Enter" || event.key === " ") {
@@ -377,6 +386,16 @@ document.getElementById("lb-next").addEventListener("mousedown", function (event
 	navigate(1);
 });
 document.getElementById("lb-close").addEventListener("mousedown", function (event) {
+	if (isMiddleMouse(event)) {
+		// Open the current image in a new tab with the close button clicked
+		var img = IMAGES[current];
+		if (img) {
+			var url = new URL(location.href);
+			url.hash = encodeURIComponent(img.name);
+			window.open(url.toString(), '_blank');
+		}
+		return;
+	}
 	if (!isLeftMouse(event)) return;
 	closeLightbox()
 });
