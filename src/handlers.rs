@@ -6,6 +6,8 @@ use axum::{
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use serde::Deserialize;
 use std::{path::PathBuf, sync::Arc};
+use std::fs::File;
+use std::io::Read;
 
 use crate::{config::PhotoDir, template, thumbnail, AppState};
 
@@ -197,8 +199,15 @@ pub async fn serve_octicon(
     // Try to find and serve the requested icon
     let icon_path = format!("{}.svg", icon_name);
 
-    if let Some(icon_data) = OCTICONS.get(&icon_path) {
-        let data = icon_data.as_bytes().to_vec();
+    if let Some(icon_file) = OCTICONS.get_file(&icon_path) {
+        let Some(data) = icon_file.contents_utf8() else {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid icon encoding",
+            )
+                .into_response();
+        };
+
         (
             [
                 (header::CONTENT_TYPE, "image/svg+xml".to_string()),
