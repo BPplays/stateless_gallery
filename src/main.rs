@@ -124,6 +124,8 @@ async fn main() -> Result<()> {
 		.route("/{slug}/thumb/{encoded}", get(handlers::serve_thumbnail))
 		// Full-size:      GET /{slug}/full/{encoded}?secret=...
 		.route("/{slug}/full/{encoded}", get(handlers::serve_full))
+		// Octicons:       GET /octicon/{icon_name}
+		.route("/octicon/{icon_name}", get(handlers::serve_octicon))
 		.with_state(state);
 
 

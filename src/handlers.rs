@@ -186,6 +186,32 @@ pub async fn serve_static(
     serve_file(&static_path).await
 }
 
+/// Serve octicon SVGs
+pub async fn serve_octicon(
+    AxumPath(icon_name): AxumPath<String>,
+    State(_state): State<Arc<AppState>>,
+) -> Response {
+    // Use include_dir to statically include all the octicons
+    const OCTICONS: include_dir::Dir = include_dir::include_dir!("icons/octicons/icons");
+
+    // Try to find and serve the requested icon
+    let icon_path = format!("{}.svg", icon_name);
+
+    if let Some(icon_data) = OCTICONS.get(&icon_path) {
+        let data = icon_data.as_bytes().to_vec();
+        (
+            [
+                (header::CONTENT_TYPE, "image/svg+xml".to_string()),
+                (header::CACHE_CONTROL, "public, max-age=86400".to_string()),
+            ],
+            data,
+        )
+            .into_response()
+    } else {
+        (StatusCode::NOT_FOUND, "icon not found").into_response()
+    }
+}
+
 // ─── File serving ─────────────────────────────────────────────────────────────
 
 async fn serve_file(path: &std::path::Path) -> Response {
