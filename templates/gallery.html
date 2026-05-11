@@ -49,6 +49,8 @@
 			<link rel="stylesheet"
 				  href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans+JP:wght@100..900&display=swap">
 		</noscript>
+		<link rel="preload" as="image" href="/octicon/screen-full-16.svg">
+		<link rel="preload" as="image" href="/octicon/screen-normal-16.svg">
 
 		<style>
 		*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -173,6 +175,47 @@
 			transition: opacity .15s ease;
 		}
 		#lb-slide-curr img.fading { opacity: 0; }
+
+		/* ── icons ─────────────────────────────────── */
+		.gear-16-icon {
+			width: 16px;
+			height: 16px;
+			display: inline-block;
+
+			background-color: currentColor;
+
+			mask: url("/octicon/gear-16.svg") no-repeat center;
+			mask-size: contain;
+
+			-webkit-mask: url("/octicon/gear-16.svg") no-repeat center;
+			-webkit-mask-size: contain;
+		}
+
+		.icon-mask {
+			width: 15px;
+			height: 15px;
+			display: inline-block;
+			background-color: currentColor;
+
+			mask-size: contain;
+			mask-repeat: no-repeat;
+			mask-position: center;
+
+			-webkit-mask-size: contain;
+			-webkit-mask-repeat: no-repeat;
+			-webkit-mask-position: center;
+		}
+
+		#lb-fs-enter {
+			mask-image: url("/octicon/screen-full-16.svg");
+			-webkit-mask-image: url("/octicon/screen-full-16.svg");
+		}
+
+		/* Exit fullscreen icon */
+		#lb-fs-exit {
+			mask-image: url("/octicon/screen-normal-16.svg");
+			-webkit-mask-image: url("/octicon/screen-normal-16.svg");
+		}
 
 		/* ── Shared button style ─────────────────────────────────── */
 		.lb-icon-btn {
@@ -311,9 +354,7 @@
 			<h1>__TITLE__</h1>
 			<span class="count" id="js-count">__COUNT__</span>
 			<button id="settings-btn" class="lb-icon-btn" aria-label="Settings" title="Settings" style="margin-left: auto;">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.001.001a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1.82-1.82l.001-.001a1.65 1.65 0 0 0-.33-1.82l-.001-.001a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1.82 1.82l-.001.001zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-				</svg>
+				<span class="octicon gear-16-icon"></span>
 			</button>
 		</header>
 
@@ -331,8 +372,8 @@
 
 			<!-- Top-left: fullscreen -->
 			<button class="lb-icon-btn" id="lb-fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">
-				<svg id="lb-fs-enter" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-				<svg id="lb-fs-exit" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+				<span id="lb-fs-enter" class="icon-mask"></span>
+				<span id="lb-fs-exit" class="icon-mask" style="display:none"></span>
 			</button>
 
 			<!-- Top-right: share / download / close -->
