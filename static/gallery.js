@@ -796,12 +796,17 @@ function loadSettings() {
 		// Apply default settings if none saved
 		applySettings();
 	}
+
+	updateColorIndicators();
 }
 
 function isValidColor(color) {
-	return true
-	// Basic color validation
-	return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
+	if (typeof color !== "string") return false;
+	color = color.trim();
+	if (!color) return false;
+
+	// Accept CSS colors and CSS variables like var(--blue)
+	return CSS.supports("color", color);
 }
 
 function applySettings() {
