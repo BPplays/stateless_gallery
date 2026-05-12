@@ -192,8 +192,8 @@
 		}
 
 		.icon-mask {
-			width: 15px;
-			height: 15px;
+			width: 16px;
+			height: 16px;
 			display: inline-block;
 			background-color: currentColor;
 
@@ -207,14 +207,45 @@
 		}
 
 		#lb-fs-enter {
-			mask-image: url("/octicon/screen-full-16.svg");
-			-webkit-mask-image: url("/octicon/screen-full-16.svg");
+			--mask-url: url("/octicon/screen-full-16.svg");
+
+			mask-image: var(--mask-url);
+			-webkit-mask-image: var(--mask-url);
 		}
 
-		/* Exit fullscreen icon */
 		#lb-fs-exit {
-			mask-image: url("/octicon/screen-normal-16.svg");
-			-webkit-mask-image: url("/octicon/screen-normal-16.svg");
+			--mask-url: url("/octicon/screen-normal-16.svg");
+
+			mask-image: var(--mask-url);
+			-webkit-mask-image: var(--mask-url);
+		}
+
+		#lb-share-img {
+			--mask-url: url("/octicon/share-android-16.svg");
+
+			mask-image: var(--mask-url);
+			-webkit-mask-image: var(--mask-url);
+		}
+
+		#lb-download-img {
+			--mask-url: url("/octicon/download-16.svg");
+
+			mask-image: var(--mask-url);
+			-webkit-mask-image: var(--mask-url);
+		}
+
+		#lb-close-img {
+			--mask-url: url("/octicon/x-16.svg");
+
+			mask-image: var(--mask-url);
+			-webkit-mask-image: var(--mask-url);
+		}
+
+		#lb-close-img {
+			--mask-url: url("/octicon/x-16.svg");
+
+			mask-image: var(--mask-url);
+			-webkit-mask-image: var(--mask-url);
 		}
 
 		/* ── Shared button style ─────────────────────────────────── */
@@ -379,19 +410,19 @@
 			<!-- Top-right: share / download / close -->
 			<div id="lb-topbar">
 				<button class="lb-icon-btn" id="lb-share" aria-label="Share" title="Share">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+					<span id="lb-share-img" class="icon-mask"></span>
 				</button>
 				<button class="lb-icon-btn" id="lb-download" aria-label="Download" title="Download" download>
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+					<span id="lb-download-img" class="icon-mask"></span>
 				</a>
 				<button class="lb-icon-btn" id="lb-close" aria-label="Close">
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+					<span id="lb-close-img" class="icon-mask"></span>
 				</button>
 			</div>
 
 			<!-- Nav arrows (hidden on touch devices via CSS) -->
 			<button class="lb-nav-btn" id="lb-prev" aria-label="Previous image">&#8249;</button>
-			<button class="lb-nav-btn" id="lb-next" aria-label="Next image">&#8250;</button>
+			<button class="lb-nav-btn" id="lb-next" aria-label="Next image">&#8251;</button>
 
 			<!-- Caption + copy-link -->
 			<div id="lb-caption" aria-live="polite">
