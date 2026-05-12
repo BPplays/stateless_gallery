@@ -81,10 +81,6 @@ pub async fn serve_favicon(
     }
 }
 
-pub async fn serve_gallery_js () -> Response {
-    return include_str!("../static/gallery.js").into_response()
-}
-
 /// Serve the gallery index page.
 pub async fn gallery_index(
     AxumPath(slug): AxumPath<String>,
@@ -179,13 +175,33 @@ pub async fn serve_full(
 
 /// Serve static files
 pub async fn serve_static(
+    AxumPath(file_name): AxumPath<String>,
     State(_state): State<Arc<AppState>>,
 ) -> Response {
-    // Only serve gallery.js from static directory
-    let static_path = std::path::Path::new("static").join("gallery.js");
+    const STATIC: include_dir::Dir = include_dir::include_dir!("static");
 
-    // Serve the file if it exists, otherwise return not found
-    serve_file(&static_path).await
+    let file_path = format!("{}", file_name);
+
+
+    if let Some(file) = STATIC.get_file(&file_path) {
+        let Some(data) = file.contents_utf8() else {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid icon encoding",
+            )
+                .into_response();
+        };
+
+        (
+            [
+                (header::CACHE_CONTROL, "public, max-age=86400".to_string()),
+            ],
+            data,
+        )
+            .into_response()
+    } else {
+        (StatusCode::NOT_FOUND, "icon not found").into_response()
+    }
 }
 
 /// Serve octicon SVGs

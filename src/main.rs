@@ -114,17 +114,11 @@ async fn main() -> Result<()> {
 	});
 
 	let app = Router::new()
-	// Favicon:      GET /favicon.png
 		.route("/favicon.png", get(handlers::serve_favicon))
-		// Gallery JS:   GET /gallery.js
-		.route("/gallery.js", get(handlers::serve_gallery_js))
-		// Gallery index:  GET /{slug}?secret=...
 		.route("/{slug}", get(handlers::gallery_index))
-		// Thumbnail:      GET /{slug}/thumb/{encoded}?secret=...
 		.route("/{slug}/thumb/{encoded}", get(handlers::serve_thumbnail))
-		// Full-size:      GET /{slug}/full/{encoded}?secret=...
 		.route("/{slug}/full/{encoded}", get(handlers::serve_full))
-		// Octicons:       GET /octicon/{icon_name}
+		.route("/static/{icon_name}", get(handlers::serve_static))
 		.route("/octicon/{icon_name}", get(handlers::serve_octicon))
 		.with_state(state);
 
