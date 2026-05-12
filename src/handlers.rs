@@ -195,13 +195,13 @@ pub async fn serve_octicon(
 ) -> Response {
     // Use include_dir to statically include all the octicons
     const OCTICONS: include_dir::Dir = include_dir::include_dir!("icons/octicons/icons");
-    for file in OCTICONS.files() {
-        println!("{}", file.path().display());
-    }
+    // for file in OCTICONS.files() {
+    //     println!("{}", file.path().display());
+    // }
 
     // Try to find and serve the requested icon
     let icon_path = format!("{}", icon_name);
-    println!("\n\nserving icon path: {}", icon_path);
+    // println!("\n\nserving icon path: {}", icon_path);
 
 
     if let Some(icon_file) = OCTICONS.get_file(&icon_path) {

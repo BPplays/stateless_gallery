@@ -248,6 +248,20 @@
 			-webkit-mask-image: var(--mask-url);
 		}
 
+		#lb-prev-img {
+			--mask-url: url("/octicon/chevron-left-16.svg");
+
+			mask-image: var(--mask-url);
+			-webkit-mask-image: var(--mask-url);
+		}
+
+		#lb-next-img {
+			--mask-url: url("/octicon/chevron-right-16.svg");
+
+			mask-image: var(--mask-url);
+			-webkit-mask-image: var(--mask-url);
+		}
+
 		/* ── Shared button style ─────────────────────────────────── */
 		.lb-icon-btn {
 			width: 38px; height: 38px; border-radius: 50%;
@@ -421,8 +435,12 @@
 			</div>
 
 			<!-- Nav arrows (hidden on touch devices via CSS) -->
-			<button class="lb-nav-btn" id="lb-prev" aria-label="Previous image">&#8249;</button>
-			<button class="lb-nav-btn" id="lb-next" aria-label="Next image">&#8251;</button>
+			<button class="lb-nav-btn" id="lb-prev" aria-label="Previous image">
+				<span id="lb-prev-img" class="icon-mask"></span>
+			</button>
+			<button class="lb-nav-btn" id="lb-next" aria-label="Next image">
+				<span id="lb-next-img" class="icon-mask"></span>
+			</button>
 
 			<!-- Caption + copy-link -->
 			<div id="lb-caption" aria-live="polite">

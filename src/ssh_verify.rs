@@ -226,7 +226,8 @@ async fn check_github_api(key_bytes: &[u8], pat: Option<String>) -> anyhow::Resu
 	hasher.update(key_bytes);
 	let input_sha1 = hasher.finalize();
 
-	println!("input:");
+
+	println!("input ssh key:");
 	println!("{:x}", input_sha1);
 
 	println!("from:");
