@@ -874,8 +874,10 @@ function importSettings() {
 
 				// Show notification
 				showToast('Settings imported successfully');
+				updateColorIndicators();
 			} catch (error) {
 				showToast('Error importing settings');
+				updateColorIndicators();
 			}
 		};
 		reader.readAsText(file);
