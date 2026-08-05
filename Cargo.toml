@@ -8,7 +8,7 @@ description = "A stateless multi-gallery photo server backed by a YAML config an
 # Web server
 axum       = "0.8"
 tokio      = { version = "1.50", features = ["full"] }
-tower-http = { version = "0.6", features = ["cors"] }
+tower-http = { version = "0.7", features = ["cors"] }
 
 # Config & CLI
 clap       = { version = "4", features = ["derive"] }
@@ -33,7 +33,7 @@ bytes      = "1"
 notify     = "8"
 
 # Git integration (libgit2 — no git binary required)
-git2       = { version = "0.20.4", default-features = true, features = ["https", "ssh"] }
+git2       = { version = "0.20", default-features = true, features = ["https", "ssh"] }
 
 # SSH host key verification: DNS (DoH / DoT / plain), SSHFP, known_hosts
 trust-dns-resolver = { version = "0.23", features = [
@@ -42,12 +42,12 @@ trust-dns-resolver = { version = "0.23", features = [
     "dns-over-https-rustls",    # DoH (DNS-over-HTTPS) via rustls, for trust-dns transport
 ] }
 sha1 = "0.10"                   # SSHFP SHA-1 fingerprint comparison
+sha2       = "0.10"
 hmac = "0.12"                   # known_hosts hashed-entry HMAC-SHA1
 
 # File-system & utilities
 walkdir    = "2"
-base64     = "0.22"
-sha2       = "0.10"
+base64     = "0.23"
 hex        = "0.4"
 mime_guess = "2"
 include_dir = "0.7"
@@ -59,10 +59,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 
 # reqwest = { version = "0.12", features = ["blocking", "json", "rustls-tls"] }
-reqwest = { version = "0.12", default-features = false, features = [
+reqwest = { version = "0.13", default-features = false, features = [
     "blocking",
     "json",
-    "rustls-tls"
+    "rustls"
 ] }
 
 
