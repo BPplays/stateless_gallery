@@ -33,7 +33,7 @@ bytes      = "1"
 notify     = "8"
 
 # Git integration (libgit2 — no git binary required)
-git2       = { version = "0.20", default-features = true, features = ["https", "ssh"] }
+git2       = { version = "0.21", default-features = true, features = ["https", "ssh"] }
 
 # SSH host key verification: DNS (DoH / DoT / plain), SSHFP, known_hosts
 trust-dns-resolver = { version = "0.23", features = [

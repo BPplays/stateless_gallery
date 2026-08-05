@@ -77,10 +77,10 @@ fn git_sync_blocking(
 				return false;
 			}
 		};
-		if remotes.iter().flatten().any(|n| n == "origin") {
+		if remotes.iter().flatten().flatten().any(|n| n == "origin") {
 			"origin".to_string()
 		} else {
-			match remotes.iter().flatten().next() {
+			match remotes.iter().flatten().flatten().next() {
 				Some(n) => n.to_string(),
 				None    => {
 					tracing::warn!(dir = %dir.display(), "git: no remotes configured");
