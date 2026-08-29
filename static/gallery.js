@@ -205,6 +205,9 @@ var loadGen = 0;
 function loadCentre(imgData) {
 	var gen = ++loadGen;
 
+	lbImgCurr.fetchPriority = "high";
+	// lbImgCurr.decoding = "async";
+
 	// Full-res already decoded and cached: display immediately, no spinner.
 	if (imgCache.has(imgData.full)) {
 		lbImgCurr.src = imgCache.get(imgData.full).src;
