@@ -82,7 +82,8 @@ function buildGrid(images) {
 
 		var el = document.createElement("img");
 		el.src = img.thumb; el.alt = img.name;
-		el.loading = "lazy"; el.decoding = "async";
+		// el.loading = "lazy"; el.decoding = "async";
+		el.loading = "eager"; el.fetchpriority  = "high"; el.decoding = "async";
 
 		var label = document.createElement("div");
 		label.className = "label";
