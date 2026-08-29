@@ -66,7 +66,22 @@ function isRightMouse(event) {
 	return (event.button === 2);
 }
 
+
+
 // ── Grid ─────────────────────────────────────────────────────────────────
+function updateGridImagesPriority() {
+	gallery.querySelectorAll("img").forEach(function (img) {
+		updateGridImagePriority(img)
+	});
+}
+
+function updateGridImagePriority(el) {
+	var lightboxOpen = isLightboxOpen();
+
+	el.loading = lightboxOpen ? "lazy" : "eager";
+	el.fetchPriority = lightboxOpen ? "low" : "high";
+}
+
 function buildGrid(images) {
 	gallery.innerHTML = "";
 	if (images.length === 0) {
@@ -83,7 +98,8 @@ function buildGrid(images) {
 		var el = document.createElement("img");
 		el.src = img.thumb; el.alt = img.name;
 		// el.loading = "lazy"; el.decoding = "async";
-		el.loading = "eager"; el.fetchPriority = "high"; el.decoding = "async";
+		updateGridImagePriority(el)
+		el.decoding = "async";
 
 		var label = document.createElement("div");
 		label.className = "label";
@@ -344,6 +360,7 @@ function openLightbox(index) {
 	current = index;
 	lightbox.classList.add("open");
 	document.body.style.overflow = "hidden";
+	updateGridImagesPriority()
 	loadAllSlots(current);
 	setHashForIndex(current);
 	updateTopbar(current);
@@ -354,6 +371,7 @@ function openLightbox(index) {
 function closeLightbox() {
 	lightbox.classList.remove("open");
 	document.body.style.overflow = "";
+	updateGridImagesPriority()
 	clearHash();
 	loadGen++; // cancel any in-flight centre-slot load
 	lbSpinner.classList.remove("visible");
